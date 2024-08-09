@@ -1,0 +1,73 @@
+image: mcr.microsoft.com/dotnet/sdk:8.0
+
+workflow:
+  rules:
+    - when: always
+
+stages:
+  - build
+  - sonarqube
+  - publish
+
+before_script:
+  - apt-get update && apt-get install -y git curl libmcrypt-dev
+  - dotnet restore
+
+build:
+  stage: build
+  script:
+    - dotnet build
+
+sonarqube:
+  stage: sonarqube
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  cache:
+    key: "${CI_JOB_NAME}"
+    paths:
+      - .sonar/cache
+  before_script:
+    - VERSION=$(sed -n "s/<Version>\s*\(.*\)\s*<\/Version>/\1/p" src/Long.Game/Long.Game.csproj | tr -d '[:space:]')
+  script: 
+    - echo Running Quality Gate to $VERSION
+    - "apt-get update"
+    - "apt-get install --yes openjdk-17-jre"
+    - "dotnet tool install --global dotnet-sonarscanner"
+    - "export PATH=\"$PATH:$HOME/.dotnet/tools\""
+    - "dotnet sonarscanner begin /d:sonar.login=\"$SONAR_TOKEN\" /d:\"sonar.host.url=$SONAR_HOST_URL\" /d:sonar.qualitygate.wait=true /v:\"$VERSION\" "
+    - "dotnet build"
+    - "dotnet sonarscanner end /d:sonar.login=\"$SONAR_TOKEN\""
+  allow_failure: false
+  only:
+    - develop
+    - merge_requests
+
+publish:
+  stage: publish
+  variables:
+    deploy_path: "Bin"
+  only:
+    - main
+  artifacts:
+    paths:
+      - src/Bin/net8.0/win-x64/publish
+    when: on_success
+    expire_in: 1 hour
+  before_script:
+    - IMAGE_TAG="$(echo $CI_COMMIT_SHA | head -c 8)"
+    - VERSION=$(sed -n "s/<Version>\s*\(.*\)\s*<\/Version>/\1/p" src/Long.Game/Long.Game.csproj | tr -d '[:space:]')
+    - FILE_NAME=long.server."$VERSION".7z
+    - apt-get update -qq && apt-get install -y -qq zip lftp p7zip-full
+  script:
+    - echo "Currently deploying $FILE_NAME"
+    - cd src/Long.Game
+    - dotnet publish -c Release -r win-x64 --self-contained true
+    - cd ..
+    - cd Long.Ai
+    - dotnet publish -c Release -r win-x64 --self-contained true
+    - cd ..
+    - cd Bin/net7.0/win-x64/publish
+    - 7z a Long-$VERSION-IMAGE_TAG.7z * -x!*.config.json
+    - lftp -e "set ftp:use-allo false; set ftp:passive-mode true; set ftp:prefer-epsv false; put -O / \"$FILE_NAME\"" -u $FTP_USERNAME,$FTP_PASSWORD $FTP_HOSTNAME
