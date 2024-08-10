@@ -20,7 +20,7 @@
     "Hostname": "localhost",
     "Username": "root",
     "Password": "co222323",
-    "Schema": "cq6135v2",
+    "Schema": "game_cq",
     "Port": 3306
   },
   "Login": {
