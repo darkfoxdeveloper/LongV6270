@@ -103,6 +103,7 @@ CREATE TABLE `conquer_account_authority` (
 
 LOCK TABLES `conquer_account_authority` WRITE;
 /*!40000 ALTER TABLE `conquer_account_authority` DISABLE KEYS */;
+INSERT INTO `conquer_account_authority` VALUES (1,'Player','Player'),(2,'Player','Player');
 /*!40000 ALTER TABLE `conquer_account_authority` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -201,7 +202,7 @@ CREATE TABLE `realm` (
 
 LOCK TABLES `realm` WRITE;
 /*!40000 ALTER TABLE `realm` DISABLE KEYS */;
-INSERT INTO `realm` VALUES ('94390aa0-c75d-11ed-9586-0050560401e2',1,'WarLord',6,'192.168.1.129','127.0.0.1',5816,9921,1,'2vOQ/9KufSH7WkyTDiH0F0YB887vU+NuDyp97CKAW44=','KSNMdd6bh56v0M7iY0OZIAiL1fAPvdrpp+rzDwlP3cg=','2024-04-03 01:37:07','localhost','root','co222323','cq6135v2','3306',_binary '',_binary '\0',1,NULL,9857),('b6d007df-4ecf-11ef-ab0d-0050560401e2',4,'Dragon',6,'192.168.1.129','127.0.0.1',5816,9921,1,'2vOQ/9KufSH7WkyTDiH0F0YB887vU+NuDyp97CKAW44=','KSNMdd6bh56v0M7iY0OZIAiL1fAPvdrpp+rzDwlP3cg=','2024-04-03 01:37:07','localhost','root','co222323','cq6135v2','3306',_binary '',_binary '',1,4,9857);
+INSERT INTO `realm` VALUES ('94390aa0-c75d-11ed-9586-0050560401e2',1,'WarLord',6,'192.168.1.129','127.0.0.1',5816,9921,1,'2vOQ/9KufSH7WkyTDiH0F0YB887vU+NuDyp97CKAW44=','KSNMdd6bh56v0M7iY0OZIAiL1fAPvdrpp+rzDwlP3cg=','2024-04-03 01:37:07','','','','','',_binary '\0',_binary '',1,NULL,9857);
 /*!40000 ALTER TABLE `realm` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -248,4 +249,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-08-10 20:49:54
+-- Dump completed on 2024-08-10 20:58:21
