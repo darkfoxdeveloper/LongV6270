@@ -1,9 +1,9 @@
 {
   "Database": {
-    "Hostname": "ftwmasters.com.br",
-    "Username": "ftwmasteidentities",
-    "Password": "i3M&w721i",
-    "Schema": "ftwmaste_identities",
+    "Hostname": "localhost",
+    "Username": "root",
+    "Password": "co222323",
+    "Schema": "account_cq",
     "Port": 3306
   },
   "AllowedServers": [

@@ -11,10 +11,10 @@
         [Column("ast_prof_rank")]
         public virtual byte AstProfRank { get; set; }
         [Column("metempsychosis")]
-        public virtual byte Metempsychosis { get; set; }
+        public virtual byte? Metempsychosis { get; set; }
         [Column("user_level")]
-        public virtual byte UserLevel { get; set; }
+        public virtual byte? UserLevel { get; set; }
         [Column("ast_prof_level")]
-        public virtual byte AstProfLevel { get; set; }
+        public virtual byte? AstProfLevel { get; set; }
     }
 }

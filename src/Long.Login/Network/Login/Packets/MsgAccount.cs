@@ -169,7 +169,7 @@ namespace Long.Login.Network.Login.Packets
                     buffer[x] ^= pSeed[(x * 6 % 4) % length];
                 }
             }
-            return Encoding.ASCII.GetString(buffer).Trim('\0');
+            return Encoding.UTF8.GetString(buffer).Trim('\0');
         }
     }
 }

@@ -27,10 +27,13 @@ namespace Long.Kernel.States.Npcs
 
             if (IsSynFlag() && OwnerIdentity > 0)
             {
-                ISyndicate syn = SyndicateManager.GetSyndicate((int)OwnerIdentity);
-                if (syn != null)
+                if (SyndicateManager != null)
                 {
-                    Name = syn.Name;
+                    ISyndicate syn = SyndicateManager.GetSyndicate((int)OwnerIdentity);
+                    if (syn != null)
+                    {
+                        Name = syn.Name;
+                    }
                 }
             }
         }

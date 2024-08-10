@@ -3,7 +3,7 @@
   "Game": {
     "Id": 1,
     "Guid": "94390aa0-c75d-11ed-9586-0050560401e2",
-    "Name": "Comet",
+    "Name": "WarLord",
     "IPAddress": "0.0.0.0",
     "Port": 5816,
     "MaxOnlinePlayers": 1500,
@@ -19,8 +19,8 @@
   "Database": {
     "Hostname": "localhost",
     "Username": "root",
-    "Password": "1234",
-    "Schema": "cq",
+    "Password": "co222323",
+    "Schema": "cq6135v2",
     "Port": 3306
   },
   "Login": {
@@ -58,7 +58,7 @@
       },
       {
         "ServerID": 1,
-        "ServerName": "Comet",
+        "ServerName": "WarLord",
         "IPAddress": "127.0.0.1",
         "Port": 9856,
         "Username": "test",
