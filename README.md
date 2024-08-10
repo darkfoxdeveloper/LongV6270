@@ -44,12 +44,15 @@ Download preconfigurated client from here:
 - Chat (Ghost channel for example not implemented)
 - Some npcs missing (like some npcs for quest of tower and fan)
 - Some npcs are showing errors of lua (Example: PirateLord in TwinCity on the Armorer NPC)
-- Arenas (I think only work the Qualifier Standard)
+- Arenas
 - House Furnitures (Incomplete)
 - Titles (Not from Wardrobe, that are fine)
 - Lottery (Not working 100% fine)
 - Mentor (Not 100% implemented)
 - Some portals are wrong (Like portal of phoenix city to twin city)
+- Mount skills not working (I think need IA project and is not added here yet)
+- Mobs not loading (I think need IA project and is not added here yet)
+
 
 ## Getting Started
 
