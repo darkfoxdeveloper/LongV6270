@@ -18,7 +18,10 @@ namespace Long.Module.Guide
 
         public Task OnUserLogoutAsync(Character user)
         {
-            return user.Guide.OnLogoutAsync();
+            if (user.Guide != null)            
+				return user.Guide.OnLogoutAsync();			
+            else
+                return Task.CompletedTask;
         }
     }
 }

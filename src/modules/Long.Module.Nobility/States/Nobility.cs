@@ -48,7 +48,7 @@ namespace Long.Module.Peerage.States
                 DataLow = user.Identity
             };
             msg.Strings.Add($"{user.Identity} {Donation} {(int)Rank:d} {Position}");
-            await user.BroadcastRoomMsgAsync(msg, true);
+			await user.BroadcastRoomMsgAsync(msg, true);
         }
     }
 }

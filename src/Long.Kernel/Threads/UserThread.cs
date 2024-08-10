@@ -1,28 +1,41 @@
 ﻿using Long.Kernel.Managers;
+using Long.Kernel.States.User;
 using Long.Shared.Threads;
+using Quartz;
+using System.Diagnostics;
 
 namespace Long.Kernel.Threads
 {
-    public sealed class UserThread : ThreadBase
-    {
-        private readonly TimeOutMS basicProcessingTimer = new();
+	[DisallowConcurrentExecution]
+	public sealed class UserThread : IJob
+	{
+		private static readonly TimeOutMS basicProcessingTimer = new();
 
-        public UserThread() 
-            : base("User thread", 1000 / 60)
-        {
-            basicProcessingTimer.Startup(250);
-        }
+		private double elapsedMilliseconds;
+		public double ElapsedMilliseconds => elapsedMilliseconds;
 
-        protected override async Task OnProcessAsync()
-        {
-            bool nextProcessing = basicProcessingTimer.ToNextTime();
-            foreach (var user in RoleManager.QueryUserSet())
-            {
-                if (nextProcessing)
-                {
-                    await user.OnTimerAsync();
-                }
-            }
-        }
-    }
+		static UserThread()
+		{
+			basicProcessingTimer.Startup(300);
+		}
+
+		public async Task Execute(IJobExecutionContext context)
+		{
+			Stopwatch stopwatch = Stopwatch.StartNew();
+
+			Task onBattleTimerAsync(Character user) => user.OnBattleTimerAsync();
+			bool nextProcessing = basicProcessingTimer.ToNextTime();
+			foreach (var user in RoleManager.QueryUserSet())
+			{
+				if (nextProcessing)
+				{
+					await user.OnTimerAsync();
+				}
+
+				user.QueueAction(() => onBattleTimerAsync(user));
+			}
+
+			Interlocked.Exchange(ref elapsedMilliseconds, stopwatch.Elapsed.TotalMilliseconds);
+		}
+	}
 }

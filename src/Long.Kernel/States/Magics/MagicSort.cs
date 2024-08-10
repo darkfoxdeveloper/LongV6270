@@ -41,6 +41,7 @@
         Knockback = 38,
         Dashwhirl = 40,
         Perseverance = 41,
+		ArrowHail = 44,
         Selfdetach = 46,
         Detachbadstatus = 47,
         CloseLine = 48,

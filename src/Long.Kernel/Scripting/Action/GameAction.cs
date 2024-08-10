@@ -330,11 +330,23 @@ namespace Long.Kernel.Scripting.Action
                         result = await ExecuteActionSynChangeNameAsync(action, param, user, role, item, inputs);
                         break;
 
-                    #endregion
+					#endregion
 
-                    #region User
+					#region Monster Item
 
-                    case TaskActionType.ActionUserAttr:
+					case TaskActionType.ActionMstDropitem:
+						result = await ExecuteActionMstDropitemAsync(action, param, user, role, item, inputs);
+						break;
+
+					case TaskActionType.ActionMstTeamReward:
+						result = await ExecuteActionMstTeamRewardAsync(action, param, user, role, item, inputs);
+						break;
+
+					#endregion
+
+					#region User
+
+					case TaskActionType.ActionUserAttr:
                         result = await ExecuteUserAttrAsync(action, param, user, role, item, inputs);
                         break;
                     case TaskActionType.ActionUserFull:
@@ -585,9 +597,6 @@ namespace Long.Kernel.Scripting.Action
                     case TaskActionType.ActionOpenShop:
                         result = await ExecuteActionOpenShopAsync(action, param, user, role, item, inputs);
                         break;
-                    case TaskActionType.ActionUserSetExplore:
-                        await ExecuteActionProgressBarAsync(action, param, user, role, item, inputs);
-                        return true;
                     case TaskActionType.ActionCheckUserAttributeLimit:
                         result = await ExecuteActionCheckUserAttributeLimitAsync(action, param, user, role, item, inputs);
                         break;
@@ -637,30 +646,30 @@ namespace Long.Kernel.Scripting.Action
                         result = await ExecuteActionGeneralLotteryAsync(action, param, user, role, item, inputs);
                         break;
 
-                    #region Jiang Hu
+					#endregion
 
-                    case TaskActionType.ActionJiangHuAttributes:
-                        result = await ExecuteActionJiangHuAttributesAsync(action, param, user, role, item, inputs);
-                        break;
+					#region Jiang Hu
 
-                    case TaskActionType.ActionJiangHuInscribed:
-                        result = await ExecuteActionJiangHuInscribedAsync(action, param, user, role, item, inputs);
-                        break;
+					case TaskActionType.ActionJiangHuAttributes:
+						result = await ExecuteActionJiangHuAttributesAsync(action, param, user, role, item, inputs);
+						break;
 
-                    case TaskActionType.ActionJiangHuLevel:
-                        result = await ExecuteActionJiangHuLevelAsync(action, param, user, role, item, inputs);
-                        break;
-                    case TaskActionType.ActionJiangHuExpProtection:
-                        result = await ExecuteActionJiangHuExpProtectionAsync(action, param, user, role, item, inputs);
-                        break;
+					case TaskActionType.ActionJiangHuInscribed:
+						result = await ExecuteActionJiangHuInscribedAsync(action, param, user, role, item, inputs);
+						break;
 
-                    #endregion
+					case TaskActionType.ActionJiangHuLevel:
+						result = await ExecuteActionJiangHuLevelAsync(action, param, user, role, item, inputs);
+						break;
+					case TaskActionType.ActionJiangHuExpProtection:
+						result = await ExecuteActionJiangHuExpProtectionAsync(action, param, user, role, item, inputs);
+						break;
 
-                    #endregion
+					#endregion
 
-                    #region Event
+					#region Event
 
-                    case TaskActionType.ActionEventSetstatus:
+					case TaskActionType.ActionEventSetstatus:
                         result = await ExecuteActionEventSetstatusAsync(action, param, user, role, item, inputs);
                         break;
                     case TaskActionType.ActionEventDelnpcGenid:
@@ -700,11 +709,31 @@ namespace Long.Kernel.Scripting.Action
                         result = await ExecuteActionEventMassactionAsync(action, param, user, role, item, inputs);
                         break;
 
-                    #endregion
+					#endregion
 
-                    #region Hunter
+					#region Trap
 
-                    case TaskActionType.ActionUserCheckPkItem:
+					case TaskActionType.ActionTrapCreate:
+						result = await ExecuteActionTrapCreateAsync(action, param, user, role, item, inputs);
+						break;
+					case TaskActionType.ActionTrapErase:
+						result = await ExecuteActionTrapEraseAsync(action, param, user, role, item, inputs);
+						break;
+					case TaskActionType.ActionTrapCount:
+						result = await ExecuteActionTrapCountAsync(action, param, user, role, item, inputs);
+						break;
+					case TaskActionType.ActionTrapAttr:
+						result = await ExecuteActionTrapAttrAsync(action, param, user, role, item, inputs);
+						break;
+					case TaskActionType.ActionTrapTypeDelete:
+						result = await ExecuteActionTrapTypeDeleteAsync(action, param, user, role, item, inputs);
+						break;
+
+					#endregion
+
+					#region Hunter
+
+					case TaskActionType.ActionUserCheckPkItem:
                         result = await ExecuteActionUserCheckPkItemAsync(action, param, user, role, item, inputs);
                         break;
 
@@ -728,11 +757,39 @@ namespace Long.Kernel.Scripting.Action
                         result = await ActionFamilyWarRegisterCheckAsync(action, param, user, role, item, inputs);
                         break;
 
-                    #endregion
+					#endregion
 
-                    #region Realm
+					#region Horse Racing
 
-                    case TaskActionType.ActionRealmIsOSUser:
+					case TaskActionType.ActionMountRacingEventReset:
+						result = await ExecuteActionMountRacingEventResetAsync(action, param, user, role, item, inputs);
+						break;
+
+					#endregion
+
+					#region Event Progress Bar
+
+					case TaskActionType.ActionProgressBar:
+						await ExecuteActionProgressBarAsync(action, param, user, role, item, inputs);
+						return true;
+
+					#endregion
+
+					#region Capture The Flag
+
+					case TaskActionType.ActionCaptureTheFlagCheck:
+						result = await ExecuteActionCaptureTheFlagCheckAsync(action, user, role, item, inputs);
+						break;
+
+					case TaskActionType.ActionCaptureTheFlagExit:
+						result = await ExecuteActionCaptureTheFlagExitAsync(action, user, role, item, inputs);
+						break;
+
+					#endregion
+
+					#region Realm
+
+					case TaskActionType.ActionRealmIsOSUser:
                         result = await ExecuteActionRealmIsOSUserAsync(action, param, user, role, item, inputs);
                         break;
                     case TaskActionType.ActionRealmTeleport:
@@ -1511,16 +1568,16 @@ namespace Long.Kernel.Scripting.Action
             ActionMouseClearStatus = 1652, // 清除玩家当前指针选取状态 服务器新增清除玩家当前指针选取状态的action，服务器执行该action后，下发消息给客户端
             ActionMouseDeleteChosen = 1654, // 
 
-            /// <summary>
-            /// genuineqi set 3                 >= += == set Talent Status
-            /// freecultivateparam              >= += set
-            /// </summary>
-            ActionJiangHuAttributes = 1705,
-            ActionJiangHuInscribed = 1706,
-            ActionJiangHuLevel = 1707, // data level to check
-            ActionJiangHuExpProtection = 1709,  // param "+= 3600" seconds
+			/// <summary>
+			/// genuineqi set 3                 >= += == set Talent Status
+			/// freecultivateparam              >= += set
+			/// </summary>
+			ActionJiangHuAttributes = 1705,
+			ActionJiangHuInscribed = 1706,
+			ActionJiangHuLevel = 1707, // data level to check
+			ActionJiangHuExpProtection = 1709,  // param "+= 3600" seconds
 
-            ActionAutoHuntIsActive = 1721,
+			ActionAutoHuntIsActive = 1721,
             ActionCheckUserAttributeLimit = 1723,
             ActionAddProcessActivityTask = 1724,
             ActionAddProcessTaskSchedle = 1725, // Increase the progress of staged tasks (data fill task type)
@@ -1588,13 +1645,13 @@ namespace Long.Kernel.Scripting.Action
             ActionFamilyWarAuthorityCheck = 3523,
             ActionFamilyWarRegisterCheck = 3524,
             ActionFamilyLast = 3599,
+            
+			ActionMountRacingEventReset = 3601,
 
-            ActionMountRacingEventReset = 3601,
+			// Progress
+			ActionProgressBar = 3701,
 
-            // Progress
-            ActionUserSetExplore = 3701,
-
-            ActionCaptureTheFlagCheck = 3901,
+			ActionCaptureTheFlagCheck = 3901,
             ActionCaptureTheFlagExit = 3902,
 
             //Magic

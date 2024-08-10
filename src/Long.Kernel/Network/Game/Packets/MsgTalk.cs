@@ -1,14 +1,17 @@
 ﻿using System.Configuration.Internal;
 using System.Drawing;
 using Long.Database.Entities;
+using Long.Game.Network.Ai.Packets;
 using Long.Kernel.Database;
 using Long.Kernel.Managers;
 using Long.Kernel.Modules.Systems.Syndicate;
+using Long.Kernel.Network.Ai;
 using Long.Kernel.Network.Cross.Client.Packets;
 using Long.Kernel.Processors;
 using Long.Kernel.Scripting.Action;
 using Long.Kernel.States;
 using Long.Kernel.States.Items;
+using Long.Kernel.States.Magics;
 using Long.Kernel.States.MessageBoxes;
 using Long.Kernel.States.Npcs;
 using Long.Kernel.States.User;
@@ -16,7 +19,11 @@ using Long.Kernel.States.World;
 using Long.Network.Packets;
 using Long.Network.Packets.Cross;
 using Long.Shared.Helpers;
+using Long.Shared.Managers;
+using Long.World.Enums;
 using Long.World.Map;
+using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1.X509;
 using static Long.Kernel.Network.Game.Packets.MsgAction;
 
 namespace Long.Kernel.Network.Game.Packets
@@ -464,9 +471,162 @@ namespace Long.Kernel.Network.Game.Packets
             {
                 switch (command)
                 {
-                    case "uplev":
-                    case "uplevel":
+                    case "revive":
+                        {
+                            await user.ReallyRevive(false,false);
+                            return true;
+                        }
+                    case "summonmonster":
+						{
+                            if (uint.TryParse(arg, out uint MonsterType))
+                            {
+                                DbMonstertype monstertype = RoleManager.GetMonstertype(MonsterType);
+                                var monster = new Monster(monstertype, (uint)IdentityManager.Monster.GetNextIdentity);
+                                if (!await monster.InitializeAsync(user.MapIdentity, user.X, user.Y))
+                                {
+                                }
+
+                                RoleManager.AddRole(monster);
+                                await monster.EnterMapAsync();
+                            }
+							return true;
+						}
+					case "awardmagic":
+					case "awardskill":
+						{
+							byte skillLevel = 0;
+							string[] awardSkill = arg.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+							if (!ushort.TryParse(awardSkill[0], out ushort skillType))
+							{
+								return true;
+							}
+
+							if (awardSkill.Length > 1 && !byte.TryParse(awardSkill[1], out skillLevel))
+							{
+								return true;
+							}
+
+							Magic magic;
+							if (user.MagicData.CheckType(skillType))
+							{
+								magic = user.MagicData[skillType];
+								if (await magic.ChangeLevelAsync(skillLevel))
+								{
+									await magic.SaveAsync();
+									await magic.SendAsync();
+								}
+							}
+							else
+							{
+								if (!await user.MagicData.CreateAsync(skillType, skillLevel))
+								{
+									await user.SendAsync("[Award Skill] Could not create skill!");
+								}
+							}
+
+							return true;
+						}
+					case "vip":
+						{
+							if (byte.TryParse(arg, out byte vip))
+							{
+								await user.SetAttributesAsync(ClientUpdateType.VipLevel, vip);
+							}
+
+							return true;
+						}
+					case "tele":
+						{
+							string[] awardwskill = arg.Split(new[] { ' ' }, 3, StringSplitOptions.RemoveEmptyEntries);
+							if (!ushort.TryParse(awardwskill[0], out ushort map))
+							{
+								return true;
+							}
+							if (!ushort.TryParse(awardwskill[1], out ushort x))
+							{
+								return true;
+							}
+							if (!ushort.TryParse(awardwskill[2], out ushort y))
+							{
+								return true;
+							}
+
+							await user.FlyMapAsync(map, x, y);
+
+							return true;
+						}
+					case "effect":
+						{
+							string[] splitParams = arg.Split(" ");
+							if (user == null)
+							{
+								return false;
+							}
+							if (splitParams.Length == 0)
+							{
+								return false;
+							}
+							await user.SendEffectAsync(splitParams[0], true);
+							return true;
+						}
+					case "creategen":
+						{
+							await user.SendAsync(
+								"Attention, use this command only on localhost tests or the generator thread may crash.");
+							// mobid mapid mapx mapy boundcx boundcy maxnpc rest maxpergen
+							string[] szComs = arg.Split(' ');
+							if (szComs.Length < 9)
+							{
+								await user.SendAsync(
+									"/creategen mobid mapid mapx mapy boundcx boundcy maxnpc rest maxpergen timerBegin timerEnd");
+								return true;
+							}
+
+							ushort idMob = ushort.Parse(szComs[0]);
+							uint idMap = uint.Parse(szComs[1]);
+							ushort mapX = ushort.Parse(szComs[2]);
+							ushort mapY = ushort.Parse(szComs[3]);
+							ushort boundcx = ushort.Parse(szComs[4]);
+							ushort boundcy = ushort.Parse(szComs[5]);
+							ushort maxNpc = ushort.Parse(szComs[6]);
+							ushort restSecs = ushort.Parse(szComs[7]);
+							ushort maxPerGen = ushort.Parse(szComs[8]);
+							int timerBegin = int.Parse(szComs[9]);
+							int timerEnd = int.Parse(szComs[10]);
+
+							if (idMap == 0)
+							{
+								idMap = user.MapIdentity;
+							}
+
+							if (mapX == 0 || mapY == 0)
+							{
+								mapX = user.X;
+								mapY = user.Y;
+							}
+
+							var newGen = new DbGenerator
+							{
+								Mapid = idMap,
+								Npctype = idMob,
+								BoundX = mapX,
+								BoundY = mapY,
+								BoundCx = boundcx,
+								BoundCy = boundcy,
+								MaxNpc = maxNpc,
+								RestSecs = restSecs,
+								MaxPerGen = maxPerGen,
+								BornX = 0,
+								BornY = 0,
+								TimerBegin = timerBegin,
+								TimerEnd = timerEnd
+							};
+
+							await NpcServer.SendAsync(new MsgAiGeneratorManage(newGen));
+							return true;
+						}
                     case "level":
+					case "uplev":
                         {
                             if (byte.TryParse(arg, out byte level))
                             {
@@ -476,7 +636,7 @@ namespace Long.Kernel.Network.Game.Packets
                             return true;
                         }
 
-                    case "class":
+                    case "pro":
                         {
                             if (byte.TryParse(arg, out byte proProf))
                             {
@@ -488,7 +648,7 @@ namespace Long.Kernel.Network.Game.Packets
 
                     case "life":
                         {
-                            await user.SetAttributesAsync(ClientUpdateType.TeamMemberHP, user.MaxLife);
+                            await user.SetAttributesAsync(ClientUpdateType.Hitpoints, user.MaxLife);
                             return true;
                         }
 
@@ -502,7 +662,7 @@ namespace Long.Kernel.Network.Game.Packets
                         {
                             if (user.IsAlive)
                             {
-                                await user.SetAttributesAsync(ClientUpdateType.TeamMemberHP, user.MaxLife);
+                                await user.SetAttributesAsync(ClientUpdateType.Hitpoints, user.MaxLife);
                                 await user.SetAttributesAsync(ClientUpdateType.Mana, user.MaxMana);
                             }
                             else
@@ -612,7 +772,8 @@ namespace Long.Kernel.Network.Game.Packets
                             return true;
                         }
 
-                    case "awardmoney":
+					case "money":
+					case "awardmoney":
                         {
                             if (int.TryParse(arg, out int moneyAmount))
                             {
@@ -623,6 +784,7 @@ namespace Long.Kernel.Network.Game.Packets
                         }
 
 #if DEBUG
+                    case "cps":
                     case "awardemoney":
                         {
                             if (int.TryParse(arg, out int emoneyAmount))
@@ -1071,7 +1233,116 @@ namespace Long.Kernel.Network.Game.Packets
                             return true;
                         }
 
-                    case "enthrallment":
+					case "awarditemfull":
+						{
+							if (!uint.TryParse(arg, out uint idAwardItem))
+							{
+								return true;
+							}
+
+							DbItemtype itemtype = ItemManager.GetItemtype(idAwardItem);
+							if (itemtype == null)
+							{
+								await user.SendAsync($"[AwardItem] Itemtype {idAwardItem} not found");
+								return true;
+							}
+
+							Item item = new(user);
+							if (!await item.CreateAsync(itemtype, Item.ItemPosition.Inventory, true))
+							{
+								return true;
+							}
+
+							if (item.IsCountable())
+							{
+								item.AccumulateNum = Math.Max(1, item.AccumulateNum);
+							}
+
+							if (item.IsActivable())
+							{
+								await item.ActivateAsync();
+							}
+
+							if (item.IsEquipment())
+							{
+								if (item.IsGourd() || item.IsGarment() || item.IsAccessory() || item.IsMountArmor())
+								{
+									item.ReduceDamage = 1;
+								}
+								else
+								{
+									item.ChangeAddition(12);
+									item.ReduceDamage = 7;
+									item.Enchantment = 255;
+								}
+
+								switch (item.GetItemSubType())
+								{
+									case 421:
+									case 620:
+									case 134:
+									case 152:
+										{
+											item.SocketOne = Item.SocketGem.SuperPhoenixGem;
+											item.SocketTwo = Item.SocketGem.SuperPhoenixGem;
+											break;
+										}
+
+									case 201:
+										{
+											item.SocketOne = Item.SocketGem.SuperThunderGem;
+											item.SocketTwo = Item.SocketGem.SuperThunderGem;
+											break;
+										}
+
+									case 202:
+										{
+											item.SocketOne = Item.SocketGem.SuperGloryGem;
+											item.SocketTwo = Item.SocketGem.SuperGloryGem;
+											break;
+										}
+									case 203:
+										{
+											break;
+										}
+									case 204:
+										{
+											item.SocketOne = Item.SocketGem.SuperThunderGem;
+											item.SocketTwo = Item.SocketGem.SuperGloryGem;
+											break;
+										}
+
+									case 300:
+										{
+											break;
+										}
+
+									default:
+										{
+											if (user.ProfessionSort >= 10)
+											{
+												item.SocketOne = Item.SocketGem.SuperTortoiseGem;
+												item.SocketTwo = Item.SocketGem.SuperTortoiseGem;
+											}
+											else
+											{
+												item.SocketOne = Item.SocketGem.SuperDragonGem;
+												item.SocketTwo = Item.SocketGem.SuperDragonGem;
+											}
+											break;
+										}
+								}
+							}
+							else if (item.IsMount())
+							{
+								item.ChangeAddition(12);
+							}
+
+							await user.UserPackage.AddItemAsync(item, false);
+							return true;
+						}
+
+					case "enthrallment":
                         {
                             await user.SynchroAttributesAsync(ClientUpdateType.ResetWallow, 0);
                             return true;
@@ -1146,10 +1417,19 @@ namespace Long.Kernel.Network.Game.Packets
                             return true;
                         }
 
+					case "awardalltitles":
+						{
+							foreach (var titletype in TitleStorageManager.GetTitlesType())                            
+								await user.TitleStorage.AwardTitleAsync(titletype.Type, titletype.Type, titletype.SaveTime);
+                            
+							await user.SendAsync($"[AwardTitle] Title awarded or updated!");
+							return true;
+						}
+
 #endif
 
-                        #endregion
-                }
+						#endregion
+				}
             }
 
             if (user.IsGm())

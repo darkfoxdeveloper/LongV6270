@@ -50,12 +50,12 @@ namespace Long.Kernel.Scripting.Action
             {
                 if (opt == "=")
                 {
-                    return await npc.SetAttributesAsync(ClientUpdateType.TeamMemberHP, (ulong)data);
+                    return await npc.SetAttributesAsync(ClientUpdateType.Hitpoints, (ulong)data);
                 }
 
                 if (opt == "+=")
                 {
-                    return await npc.AddAttributesAsync(ClientUpdateType.TeamMemberHP, data);
+                    return await npc.AddAttributesAsync(ClientUpdateType.Hitpoints, data);
                 }
 
                 cmp = (int)npc.Life;

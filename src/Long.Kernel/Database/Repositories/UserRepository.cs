@@ -158,5 +158,29 @@ namespace Long.Kernel.Database.Repositories
                 return false;
             }
         }
-    }
+
+		public static async Task<List<DbUser>> GetHonorRankAsync(int from, int limit)
+		{
+			await using var db = new ServerDbContext();
+			return await db.Users
+							.Where(x => x.AthleteHistoryHonorPoints > 0)
+							.OrderByDescending(x => x.AthleteHistoryHonorPoints)
+							.ThenByDescending(x => x.AthleteHistoryWins)
+							.ThenBy(x => x.AthleteHistoryLoses)
+							.Skip(from)
+							.Take(limit)
+							.ToListAsync();
+		}
+
+		public static async Task<int> GetHonorRankCountAsync()
+		{
+			await using var db = new ServerDbContext();
+			return await db.Users
+							.Where(x => x.AthleteHistoryHonorPoints > 0)
+							.OrderByDescending(x => x.AthleteHistoryHonorPoints)
+							.ThenByDescending(x => x.AthleteHistoryWins)
+							.ThenBy(x => x.AthleteHistoryLoses)
+							.CountAsync();
+		}
+	}
 }

@@ -6,6 +6,7 @@ namespace Long.Kernel.Scripting.LUA
     {
         public LuaScriptsSettings()
         {
+            Scripts = new Dictionary<int, string>();
             new ConfigurationBuilder()
                 .AddIniFile(Path.Combine(Environment.CurrentDirectory, "lua", "lua.ini"))
                 .Build()

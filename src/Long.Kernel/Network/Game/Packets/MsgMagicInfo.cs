@@ -81,7 +81,7 @@ namespace Long.Kernel.Network.Game.Packets
 
         //        default:
         //            {
-        //                logger.LogWarning($"Unhandled action {Action}");
+        //                logger.Warning($"Unhandled action {Action}");
         //                if (user.IsGm())
         //                {
         //                    await user.SendAsync($"[MsgMagicInfo] unhandled action {Action}");

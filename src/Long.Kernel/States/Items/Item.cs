@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Newtonsoft.Json;
 using System.Drawing;
 using System.Text;
+using static Long.Kernel.Network.Game.Packets.MsgInteract;
+using static Long.Kernel.States.Items.MapItem;
 
 namespace Long.Kernel.States.Items
 {
@@ -2050,11 +2052,39 @@ namespace Long.Kernel.States.Items
             itemActivateLog.Information($"{PlayerIdentity},{OwnerIdentity},{Identity},{Name},{FullName},{addTime},{DeleteTime},UPDATE");
         }
 
-        #endregion
+		#endregion
 
-        #region Equip Lock
+		#region Perfection
+		public uint PerfectionLevel
+		{
+			get => item.PerfectionLevel;
+			set => item.PerfectionLevel = (uint)value;
+		}
+		public uint PerfectionProgress
+		{
+			get => item.PerfectionProgress;
+			set => item.PerfectionProgress = (uint)value;
+		}
+		public uint PerfectionOwnerGuid
+		{
+			get => item.PerfectionOwnerGuid;
+			set => item.PerfectionOwnerGuid = (uint)value;
+		}
+		public string PerfectionOwnerName
+		{
+			get => item.PerfectionOwnerName ?? "";
+			set => item.PerfectionOwnerName = value;
+		}
+		public string PerfectionSignature
+		{
+			get => item.Signature ?? "";
+			set => item.Signature = value;
+		}
+		#endregion
 
-        private DbGhostContract ghostContract;
+		#region Equip Lock
+
+		private DbGhostContract ghostContract;
 
         public async Task<bool> TryUnlockAsync()
         {
@@ -2354,11 +2384,11 @@ namespace Long.Kernel.States.Items
             return total;
         }
 
-        #endregion
+		#endregion
 
-        #region Super Flag
+		#region Super Flag
 
-        private const int SUPER_FLAG_LIMIT = 10;
+		private const int SUPER_FLAG_LIMIT = 10;
         private readonly List<DbSuperFlag> superFlags = new();
 
         public bool IsSuperFlag()
@@ -2587,11 +2617,51 @@ namespace Long.Kernel.States.Items
             return ServerDbContext.DeleteAsync(item);
         }
 
-        #endregion
+		#endregion
 
-        #region Static Getters
+		#region Socket
 
-        public static uint CalculateCheckSum(DbItem item)
+		public async Task SendJarAsync()
+		{
+			if (user == null)
+			{
+				return;
+			}
+
+			MsgInteract msg = new()
+			{
+				Action = MsgInteractType.Chop,
+				SenderIdentity = PlayerIdentity,
+				TargetIdentity = Identity,
+				PosX = MaximumDurability,
+				Command = (int)Data * 2
+			};
+			await user.SendAsync(msg);
+		}
+
+		#endregion
+
+		#region Quench
+
+		public ItemQuench Quench { get; set; }
+
+		#endregion
+
+		#region Static Getters
+		public static int AdditionPoints(Item item)
+		{
+			int points = 0;
+			for (int i = 0; i < item.Plus; i++)
+			{
+				points += MsgDataArray.GetAddLevelExp((uint)i, item.IsMount());
+			}
+			if (item.Plus >= 12 && item.IsMount())
+			{
+				points += (int)item.CompositionProgress;
+			}
+			return points;
+		}
+		public static uint CalculateCheckSum(DbItem item)
         {
             return CalculateCheckSum(item.Id, item.Type, item.AmountLimit, item.Gem1, item.Gem2, item.Magic1, item.Magic3, item.Data, item.ReduceDmg, item.AddLife, item.AddlevelExp);
         }
@@ -2801,12 +2871,12 @@ namespace Long.Kernel.States.Items
 
         public bool IsHelmet() => IsHelmet(Type);
 
-        public static bool IsHelmet(uint type)
-        {
-            return type >= 110000 && type < 120000 || type >= 140000 && type < 150000 || type >= 123000 && type < 124000;
-        }
+		public static bool IsHelmet(uint type)
+		{
+			return type >= 110000 && type < 120000 || type >= 140000 && type < 150000 || type >= 123000 && type < 124000 || type >= 170000 && type < 180000;
+		}
 
-        public bool IsNeck() => IsNeck(Type);
+		public bool IsNeck() => IsNeck(Type);
 
         public static bool IsNeck(uint type)
         {
@@ -2908,12 +2978,12 @@ namespace Long.Kernel.States.Items
 
         public bool IsArmor() => IsArmor(Type);
 
-        public static bool IsArmor(uint type)
-        {
-            return type / 10000 == 13;
-        }
+		public static bool IsArmor(uint type)
+		{
+			return (type / 10000 == 13 || type / 10000 == 10);
+		}
 
-        public bool IsShoes() => IsShoes(Type);
+		public bool IsShoes() => IsShoes(Type);
 
         public static bool IsShoes(uint type)
         {
@@ -2929,12 +2999,12 @@ namespace Long.Kernel.States.Items
 
         public bool IsGarment() => IsGarment(Type);
 
-        public static bool IsGarment(uint type)
-        {
-            return type >= 170000 && type < 200000;
-        }
+		public static bool IsGarment(uint type)
+		{
+			return type >= 180000 && type < 200000;
+		}
 
-        public bool IsArtifact() => IsArtifact(Type);
+		public bool IsArtifact() => IsArtifact(Type);
 
         public static bool IsArtifact(uint type)
         {
@@ -3081,11 +3151,238 @@ namespace Long.Kernel.States.Items
             return IsEquipment(Type);
         }
 
-        #endregion
+		public static async Task<MapItemInfo> CreateItemInfoAsync(DbMonstertype monstertype, int quality)
+		{
+			if (monstertype == null)
+			{
+				return default;
+			}
 
-        #region Enums
+			int rand;
+			if (quality == 0)
+			{
+				rand = await NextAsync(100);
+				if (rand >= 0 && rand < 30)
+				{
+					quality = 5;
+				}
+				else if (rand >= 30 && rand < 70)
+				{
+					quality = 4;
+				}
+				else
+				{
+					quality = 3;
+				}
+			}
 
-        public enum ItemSort
+			rand = await NextAsync(1250);
+			var itemSort = 0;
+			var itemLevel = 0;
+			var itemColor = ItemColor.Orange;
+			if (rand >= 0 && rand < 20)
+			{
+				// shoes
+				itemSort = 160;
+				itemLevel = monstertype.DropShoes;
+			}
+			else if (rand >= 20 && rand < 50)
+			{
+				// necklace
+				int[] necks =
+				{
+					120, 121
+				};
+				itemSort = necks[await NextAsync(necks.Length) % necks.Length];
+				itemLevel = monstertype.DropNecklace;
+			}
+			else if (rand >= 50 && rand < 100)
+			{
+				// ring
+				int[] rings =
+				{
+					150, 151, 152
+				};
+				itemSort = rings[await NextAsync(rings.Length) % rings.Length];
+				itemLevel = monstertype.DropRing;
+			}
+			else if (rand >= 100 && rand < 400)
+			{
+				// armet
+				int[] armets =
+				{
+					111, 112, 113, 114, 117, 118, 123, 141, 142, 143, 144, 145
+				};
+				itemSort = armets[await NextAsync(armets.Length) % armets.Length];
+				itemLevel = monstertype.DropArmet;
+			}
+			else if (rand >= 400 && rand < 700)
+			{
+				// armor
+				int[] armors =
+				{
+					130, 131, 133, 134, 135, 136, 139
+				};
+				itemSort = armors[await NextAsync(armors.Length) % armors.Length];
+				itemLevel = monstertype.DropArmet;
+			}
+			else if (rand >= 700 && rand < 1200)
+			{
+				// weapon & shield
+				rand = await NextAsync(100);
+				if (rand >= 0 && rand < 20) // backsword
+				{
+					itemSort = 421;
+					itemLevel = monstertype.DropWeapon;
+				}
+				else if (rand >= 20 && rand < 40) // archer
+				{
+					itemSort = 500;
+					itemLevel = monstertype.DropWeapon;
+				}
+				else if (rand >= 40 && rand < 60) // one handed
+				{
+					// weapons
+					int[] weapons =
+					{
+						410, 420, 421, 422, 430, 440, 450, 460, 480, 481, 490, 601, 610, 611, 612, 613
+					};
+					itemSort = weapons[await NextAsync(weapons.Length) % weapons.Length];
+					itemLevel = monstertype.DropWeapon;
+				}
+				else if (rand >= 60 && rand < 80) // two handed
+				{
+					// weapons
+					int[] weapons =
+					{
+						510, 511, 530, 540, 560, 561, 580
+					};
+					itemSort = weapons[await NextAsync(weapons.Length) % weapons.Length];
+					itemLevel = monstertype.DropWeapon;
+				}
+				else // shield
+				{
+					itemSort = 900;
+					itemLevel = monstertype.DropShield;
+					itemColor = (ItemColor)await NextAsync(6) + 3;
+				}
+			}
+			else
+			{
+				if (monstertype.Level < 70)
+				{
+					return default;
+				}
+
+				// talismans
+				int[] talismans =
+				{
+					201, 202
+				};
+				itemSort = talismans[await NextAsync(talismans.Length) % talismans.Length];
+				itemLevel = 0;
+			}
+
+			if (itemLevel == 99)
+			{
+				return default;
+			}
+
+			rand = await NextAsync(100);
+			if (rand < 50) // down one lev
+			{
+				int randLev = await NextAsync(itemLevel / 2);
+				itemLevel = randLev + itemLevel / 3;
+
+				if (itemLevel >= 1)
+				{
+					itemLevel--;
+				}
+			}
+			else if (rand >= 80) // up one lev
+			{
+				if (itemSort >= 110 && itemSort <= 119
+					|| itemSort >= 130 && itemSort <= 139
+					|| itemSort >= 900 && itemSort <= 999)
+				{
+					itemLevel = Math.Min(itemLevel + 1, 9);
+				}
+				else
+				{
+					itemLevel = Math.Min(itemLevel + 1, 23);
+				}
+			}
+
+			int idItemType = itemSort * 1000 + itemLevel * 10 + quality;
+			DbItemtype itemtype = ItemManager.GetItemtype((uint)idItemType);
+			if (itemtype == null)
+			{
+				return default;
+			}
+
+			ushort amount;
+			var amountLimit = (ushort)Math.Max(1, itemtype.AmountLimit * await NextRateAsync(0.3d));
+			if (quality > 5)
+			{
+				amount = (ushort)(amountLimit * (15 + await NextAsync(20)) / 100);
+			}
+			else
+			{
+				amount = (ushort)(amountLimit * (15 + await NextAsync(35)) / 100);
+			}
+
+			var socketNum = 0;
+			if (itemSort >= 400 && itemSort < 700)
+			{
+				rand = await NextAsync(100);
+				if (rand < 5)
+				{
+					socketNum = 2;
+				}
+				else if (rand < 20)
+				{
+					socketNum = 1;
+				}
+			}
+
+			var addition = 0;
+			rand = await NextAsync(1000);
+			if (rand < 15)
+			{
+				addition = 1;
+			}
+
+			var reduceDamage = 0;
+			if (itemSort != 201 && itemSort != 202)
+			{
+				rand = await NextAsync(1000);
+				if (rand < 20)
+				{
+					reduceDamage = 5;
+				}
+				else if (rand < 50)
+				{
+					reduceDamage = 3;
+				}
+			}
+
+			return new MapItemInfo
+			{
+				Type = itemtype.Type,
+				Addition = (byte)addition,
+				Color = itemColor,
+				MaximumDurability = amountLimit,
+				Durability = amount,
+				ReduceDamage = (byte)reduceDamage,
+				SocketNum = (byte)socketNum
+			};
+		}
+
+		#endregion
+
+		#region Enums
+
+		public enum ItemSort
         {
             ItemsortFinery = 1,
             ItemsortMount = 3,

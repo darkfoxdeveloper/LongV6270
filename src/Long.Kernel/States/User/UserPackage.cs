@@ -194,7 +194,13 @@ namespace Long.Kernel.States.User
             return secondary;
         }
 
-        public Item FindItemByIdentity(uint id)
+		public bool TryGetItem(uint idItem, out Item item)
+		{
+			item = FindItemByIdentity(idItem);
+			return item != null;
+		}
+
+		public Item FindItemByIdentity(uint id)
         {
             return equipments.Values.FirstOrDefault(x => x.Identity == id) ?? inventory.Values.FirstOrDefault(x => x.Identity == id);
         }
@@ -372,7 +378,7 @@ namespace Long.Kernel.States.User
 
                 if (item.Life > 0 && healEnable)
                 {
-                    await user.AddAttributesAsync(ClientUpdateType.TeamMemberHP, item.Life);
+                    await user.AddAttributesAsync(ClientUpdateType.Hitpoints, item.Life);
                     await user.DetachStatusAsync(StatusSet.POISON_STAR);
                 }
 
@@ -416,8 +422,8 @@ namespace Long.Kernel.States.User
                 return await user.CoatStorage.EquipCoatAsync(item);
             }
 
-            //user.BattleSystem.ResetBattle();
-            //await user.MagicData.AbortMagicAsync(false);
+            user.BattleSystem.ResetBattle();
+            await user.MagicData.AbortMagicAsync(false);
 
             if (position == Item.ItemPosition.Inventory)
             {
@@ -645,8 +651,8 @@ namespace Long.Kernel.States.User
                 return false;
             }
 
-            //user.BattleSystem.ResetBattle();
-            //await user.MagicData.AbortMagicAsync(false);
+            user.BattleSystem.ResetBattle();
+            await user.MagicData.AbortMagicAsync(false);
 
             if (!IsSecondaryEquipmentUser)
             {
@@ -825,12 +831,12 @@ namespace Long.Kernel.States.User
 
                 if (nRequireProfSort == 19)
                 {
-                    if (nProfSort < 10
-                        || position == Item.ItemPosition.LeftHand
-                        || position == Item.ItemPosition.SecondaryLeftHand)
-                    {
-                        return false;
-                    }
+                    //if (nProfSort < 10
+                    //    || position == Item.ItemPosition.LeftHand
+                    //    || position == Item.ItemPosition.SecondaryLeftHand)
+                    //{
+                    //    return false;
+                    //}
                 }
                 else
                 {
@@ -1554,7 +1560,39 @@ namespace Long.Kernel.States.User
             return null;
         }
 
-        public async Task<bool> DelAllItemByTypeAsync(uint itemType)
+		public Item FindByIdentity(uint id)
+		{
+			return equipments.Values.FirstOrDefault(x => x.Identity == id) ?? inventory.Values.FirstOrDefault(x => x.Identity == id);
+		}
+
+		public Item FindByIdentityAnywhere(uint id)
+		{
+			Item item = FindByIdentity(id);
+			if (item != null)
+			{
+				return item;
+			}
+
+			if (sashes.Values.Any(sash => sash.TryGetValue(id, out item)))
+			{
+				return item;
+			}
+
+			item = chestPackage.Values.FirstOrDefault(x => x.Identity == id);
+			if (item != null)
+			{
+				return item;
+			}
+
+			if (warehouses.Values.Any(warehouse => warehouse.TryGetValue(id, out item)))
+			{
+				return item;
+			}
+
+			return null;
+		}
+
+		public async Task<bool> DelAllItemByTypeAsync(uint itemType)
         {
             // TODO check if need to check other places
             bool success = false;
@@ -1610,7 +1648,7 @@ namespace Long.Kernel.States.User
                         }
 
                         var pMapItem = new MapItem((uint)IdentityManager.MapItem.GetNextIdentity);
-                        if (pMapItem.Create(user.Map, pos, item, user.Identity))
+                        if (pMapItem.Create(user.Map, pos, item, user.Identity, MapItem.DropMode.Common))
                         {
                             await pMapItem.EnterMapAsync();
                             await item.SaveAsync();
@@ -1675,7 +1713,7 @@ namespace Long.Kernel.States.User
                     }
 
                     var pMapItem = new MapItem((uint)IdentityManager.MapItem.GetNextIdentity);
-                    if (pMapItem.Create(user.Map, pos, item, user.Identity))
+                    if (pMapItem.Create(user.Map, pos, item, user.Identity, MapItem.DropMode.Common))
                     {
                         await pMapItem.EnterMapAsync();
                         await item.SaveAsync();

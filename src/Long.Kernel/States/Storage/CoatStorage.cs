@@ -137,7 +137,9 @@ namespace Long.Kernel.States.Storage
                 return false;
             }
 
-            if (mode == RemovalType.Delete)
+			await user.SendAsync(new MsgCoatStorage(item.Identity, item.Type, 0, CoatStorageAction.UnequipWrap));
+
+			if (mode == RemovalType.Delete)
             {
                 await item.DeleteAsync();
             }

@@ -106,7 +106,7 @@ namespace Long.Module.Competion.States
                 return;
             }
 
-            if (Status == QuizStatus.Idle)
+            if (Status == QuizStatus.Idle && quizShowNpc != null)
             {
                 if (quizShowNpc.Data0 == 3 && !ready) // load
                 {
@@ -273,9 +273,10 @@ namespace Long.Module.Competion.States
                             }
                         }
                     }
+                    if (quizShowNpc != null)
+						quizShowNpc.Data0 = 0;
 
-                    quizShowNpc.Data0 = 0;
-                    ready = false;
+					ready = false;
                 }
             }
         }

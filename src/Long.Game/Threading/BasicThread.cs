@@ -3,6 +3,7 @@ using Long.Kernel.Network.Game;
 using Long.Kernel.Network.Login;
 using Long.Kernel.Network.Login.Packets;
 using Long.Kernel.Settings;
+using Long.Network.Packets.Login;
 using Long.Shared;
 using Quartz;
 
@@ -68,7 +69,7 @@ namespace Long.Game.Threading
                 {
                     await LoginClientSocket.Instance.Client.SendAsync(new MsgLoginAction
                     {
-                        Data = new Network.Packets.Login.MsgLoginAction<LoginServer>.LoginActionPB
+                        Data = new MsgLoginAction<LoginServer>.LoginActionPB
                         {
                             Action = (uint)MsgLoginAction.LoginActionEnum.Ping,
                             ServerID = RealmManager.ServerIdentity,

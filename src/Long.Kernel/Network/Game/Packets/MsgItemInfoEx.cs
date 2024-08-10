@@ -36,6 +36,11 @@ namespace Long.Kernel.Network.Game.Packets
             }
             StackAmount = (ushort)item.AccumulateNum;
             IsInscribed = item.SyndicateIdentity != 0;
+            PerfectionLevel = item.PerfectionLevel;
+            PerfectionProgress = item.PerfectionProgress;
+            PerfectionOwnerId = item.PerfectionOwnerGuid;
+            PerfectionOwnerName = item.PerfectionOwnerName;
+            PerfectionOwnerSignature = item.PerfectionSignature;
         }
 
         public uint Identity { get; set; }

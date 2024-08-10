@@ -210,13 +210,21 @@ namespace Long.Kernel.States
 
         public Task SendAsync()
         {
-            return user.SendAsync(new MsgSignIn
+            if (signIn != null)
             {
-                Action = MsgSignIn.MsgSignInType.Display,
-                RewardAmount = signIn.AwardCamulate,
-                SignInDays = signIn.SignInDay,
-                CanFillSignInTimes = RemainingCamulate
-            });
+				return user.SendAsync(new MsgSignIn
+				{
+					Action = MsgSignIn.MsgSignInType.Display,
+					RewardAmount = signIn.AwardCamulate,
+					SignInDays = signIn.SignInDay,
+					CanFillSignInTimes = RemainingCamulate
+				});
+			}
+            else
+            {
+                InitializeAsync();
+			}
+            return Task.CompletedTask;
         }
 
         public Task SaveAsync()

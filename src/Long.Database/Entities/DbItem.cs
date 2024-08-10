@@ -149,6 +149,11 @@
 
         [Column("save_time")] public virtual uint SaveTime { get; set; }
 
-        [Column("accumulate_num")] public virtual uint AccumulateNum { get; set; }
-    }
+		[Column("accumulate_num")] public virtual uint AccumulateNum { get; set; }
+		[Column("PerfectionLevel")] public virtual uint PerfectionLevel { get; set; }
+		[Column("PerfectionProgress")] public virtual uint PerfectionProgress { get; set; }
+		[Column("PerfectionOwnerGuid")] public virtual uint PerfectionOwnerGuid { get; set; }
+		[Column("PerfectionOwnerName")] public virtual string PerfectionOwnerName { get; set; }
+		[Column("Signature")] public virtual string Signature { get; set; }
+	}
 }

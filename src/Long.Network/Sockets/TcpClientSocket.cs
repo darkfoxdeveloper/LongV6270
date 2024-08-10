@@ -286,12 +286,16 @@ namespace Long.Network.Sockets
                 consumed = 0;
                 if (!Splitting(actor, examined + remaining, ref consumed))
                 {
-                    logger.Error("Client disconnected due to invalid packet.\n" +
+                    string error = string.Format("Client disconnected due to invalid packet.\n" +
                         "Examined: {0}\n" +
                         "Remaining: {1}\n" +
                         "Consumed: {2}\n" + PacketDump.Hex(actor.Buffer.ToArray()),
                         examined, remaining, consumed);
-                    break;
+                    logger.Error(error);
+					Console.ForegroundColor = ConsoleColor.Red;
+					Console.WriteLine(error);
+					Console.ResetColor();
+					break;
                 }
 
                 remaining = examined + remaining - consumed;
@@ -341,10 +345,14 @@ namespace Long.Network.Sockets
                 {
                     Span<byte> footerBytes = buffer.Slice(consumed + length, expectedFooterLength);
                     string receivedFooter = Encoding.ASCII.GetString(footerBytes.ToArray());
-                    if (!receivedFooter.Equals(expectedFooter))
+                    if (!receivedFooter.Equals(expectedFooter) && !receivedFooter.Equals("WUuTxfpe"))
                     {
                         logger.Error("Invalid packet footer.");
-                        return false;
+                        
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Invalid packet footer.");
+						Console.ResetColor();
+						return false;
                     }
                 }
 

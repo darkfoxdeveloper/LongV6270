@@ -61,12 +61,12 @@ namespace Long.Kernel.Network.Game.Packets
             client.MacAddress = MacAddress;
 
 #if DEBUG
-            if (client.AuthorityLevel < 2)
-            {
-                await client.DisconnectWithMessageAsync(MsgConnectEx.RejectionCode.NonCooperatorAccount);
-                logger.Warning("{0} non cooperator account.", client.Identity);
-                return;
-            }
+            //if (client.AuthorityLevel < 2)
+            //{
+            //    await client.DisconnectWithMessageAsync(MsgConnectEx.RejectionCode.NonCooperatorAccount);
+            //    logger.Warning("{0} non cooperator account.", client.Identity);
+            //    return;
+            //}
 #endif
 
             // Generate new keys and check for an existing character

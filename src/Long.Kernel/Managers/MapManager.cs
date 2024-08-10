@@ -91,17 +91,27 @@ namespace Long.Kernel.Managers
                 .FirstOrDefault(x => x.InstanceType == instanceId && x.OwnerIdentity == userId);
         }
 
-        public static async Task<bool> AddMapAsync(GameMap map)
-        {
-            return GameMaps.TryAdd(map.Identity, map);
-        }
+		public static async Task<bool> AddMapAsync(GameMap map)
+		{
+			if (GameMaps.TryAdd(map.Identity, map))
+			{
+				await map.SendAddToNpcServerAsync();
+				return true;
+			}
 
-        public static async Task<bool> RemoveMapAsync(uint idMap)
-        {
-            return GameMaps.TryRemove(idMap, out GameMap map);
-        }
+			return false;
+		}
 
-        public static async Task OnTimerAsync()
+		public static async Task<bool> RemoveMapAsync(uint idMap)
+		{
+			if (GameMaps.TryRemove(idMap, out GameMap map))
+			{
+				await map.SendRemoveToNpcServerAsync();
+			}
+			return true;
+		}
+
+		public static async Task OnTimerAsync()
         {
             if (instanceCheckTimer.ToNextTime(1))
             {

@@ -163,7 +163,7 @@ namespace Long.Kernel.Network.Game.Packets
 
     public enum ClientUpdateType
     {
-        TeamMemberHP = 0,
+		Hitpoints = 0,
         TeamMemberMaxHP = 1,
         Mana = 2,
         MaxMana = 3,

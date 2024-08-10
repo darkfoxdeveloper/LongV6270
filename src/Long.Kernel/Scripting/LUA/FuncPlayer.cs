@@ -64,7 +64,7 @@ namespace Long.Kernel.Scripting.LUA
                 case G_PLAYER_MaxLife: return (int)user.MaxLife;
                 case G_PLAYER_Mana: return (int)user.Mana;
                 case G_PLAYER_MaxMana: return (int)user.MaxMana;
-                //case G_PLAYER_Mentor: return (int)user.EnlightenPoints;
+                case G_PLAYER_Mentor: return (int)user.EnlightenPoints;
                 case G_PLAYER_Money: return (long)user.Silvers;
                 case G_PLAYER_EMoney: return user.ConquerPoints;
                 case G_PLAYER_EMoneyMono: return user.ConquerPointsBound;
@@ -188,7 +188,7 @@ namespace Long.Kernel.Scripting.LUA
             {
                 case G_PLAYER_Life:
                     {
-                        return user.AddAttributesAsync(ClientUpdateType.TeamMemberHP, value).GetAwaiter().GetResult();
+                        return user.AddAttributesAsync(ClientUpdateType.Hitpoints, value).GetAwaiter().GetResult();
                     }
                 case G_PLAYER_Mana:
                     {
@@ -772,7 +772,7 @@ namespace Long.Kernel.Scripting.LUA
         public bool IsAutoHangUp(int userId)
         {
             Character user = GetUser(userId);
-            //return user != null && user.IsAutoHangUp;
+            return user != null && user.IsAutoHangUp;
             return false;
         }
 

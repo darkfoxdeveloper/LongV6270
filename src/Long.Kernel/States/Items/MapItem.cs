@@ -47,18 +47,19 @@ namespace Long.Kernel.States.Items
         }
 
         public DbItemDrop ItemDrop { get; init; }
+		public DropMode Mode { get; private set; } = DropMode.Common;
 
-        #region Creation
+		#region Creation
 
-        public bool Create(GameMap map, Point pos, uint idType, uint idOwner, byte nPlus, byte nDmg, ushort nDura)
+		public bool Create(GameMap map, Point pos, uint idType, uint idOwner, byte nPlus, byte nDmg, ushort nDura, DropMode mode = MapItem.DropMode.Common)
         {
             itemtype = ItemManager.GetItemtype(idType);
-            return itemtype != null && Create(map, pos, itemtype, idOwner, nPlus, nDmg, nDura);
+            return itemtype != null && Create(map, pos, itemtype, idOwner, nPlus, nDmg, nDura, mode);
         }
 
         public bool Create(GameMap map, Point pos, DbItemtype idType, uint idOwner, byte nPlus,
             byte nDmg,
-            ushort nDura)
+            ushort nDura, DropMode mode = MapItem.DropMode.Common)
         {
             if (map == null || idType == null)
             {
@@ -91,11 +92,12 @@ namespace Long.Kernel.States.Items
                 protectionTimer.Update();
             }
 
-            return true;
+			Mode = mode;
+			return true;
         }
 
-        public bool Create(GameMap map, Point pos, MapItemInfo info, uint idOwner)
-        {
+        public bool Create(GameMap map, Point pos, MapItemInfo info, uint idOwner, DropMode mode = MapItem.DropMode.Common)
+		{
             if (map == null || info.Equals(default) || info.Type == 0)
             {
                 return false;
@@ -127,10 +129,11 @@ namespace Long.Kernel.States.Items
                 protectionTimer.Update();
             }
 
-            return true;
+			Mode = mode;
+			return true;
         }
 
-        public bool Create(GameMap map, Point pos, Item pInfo, uint idOwner)
+        public bool Create(GameMap map, Point pos, Item pInfo, uint idOwner, DropMode mode = MapItem.DropMode.Common)
         {
             if (map == null || pInfo == null)
             {
@@ -165,7 +168,8 @@ namespace Long.Kernel.States.Items
             itemInfo.OwnerIdentity = 0;
             itemInfo.Position = Item.ItemPosition.Floor;
 
-            return true;
+			Mode = mode;
+			return true;
         }
 
         public async Task<bool> CreateAsync(GameMap map, Point pos, Item pInfo, uint idOwner)
@@ -206,8 +210,8 @@ namespace Long.Kernel.States.Items
             return true;
         }
 
-        public bool CreateMoney(GameMap map, Point pos, uint dwMoney, uint idOwner)
-        {
+        public bool CreateMoney(GameMap map, Point pos, uint dwMoney, uint idOwner, DropMode mode = MapItem.DropMode.Common)
+		{
             if (map == null || Identity == 0)
             {
                 return false;
@@ -269,7 +273,8 @@ namespace Long.Kernel.States.Items
                 protectionTimer.Update();
             }
 
-            return true;
+			Mode = mode;
+			return true;
         }
 
         #endregion
@@ -507,6 +512,14 @@ namespace Long.Kernel.States.Items
             public byte SocketNum { get; set; }
             public Item.ItemColor Color { get; set; }
         }
-    }
+
+		[Flags]
+		public enum DropMode
+		{
+			Common,
+			Bound,
+			OnlyOwner
+		}
+	}
 }
 

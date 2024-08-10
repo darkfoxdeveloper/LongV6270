@@ -29,7 +29,8 @@ namespace Long.Kernel.Settings
         public DatabaseConfiguration Database { get; set; }
         public AesCipher.Settings CrossCipher { get; set; }
         public CrossServer Cross { get; set; }
-        public string[] Modules { get; set; }
+		public AiServer Ai { get; set; }
+		public string[] Modules { get; set; }
         public RealmServer Realm { get; set; }
 
         public class GameServer
@@ -62,7 +63,15 @@ namespace Long.Kernel.Settings
             public AesCipher.Settings Encryption { get; set; }
         }
 
-        public class RealmServer
+		public class AiServer
+		{
+			public string IPAddress { get; set; }
+			public int Port { get; set; }
+			public string Username { get; set; }
+			public string Password { get; set; }
+		}
+
+		public class RealmServer
         {
             public string IPAddress { get; set; }
             public int Port { get; set; }

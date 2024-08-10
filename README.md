@@ -31,6 +31,7 @@ Download preconfigurated client from here:
 [__client__](https://mega.nz/file/xExUFQ5K#UzSTpyfbCazeQtxF8vpfv__E0kvAVLC-hq5_Isu6BXA)
 
 ## TODO
+- Fix mobs (Packets are for 6609 and need to be changed)
 - PK Explorer System
 - Prestige System
 - Hero System
@@ -50,8 +51,6 @@ Download preconfigurated client from here:
 - Lottery (Not working 100% fine)
 - Mentor (Not 100% implemented)
 - Some portals are wrong (Like portal of phoenix city to twin city)
-- Mount skills not working (I think need IA project and is not added here yet)
-- Mobs not loading (I think need IA project and is not added here yet)
 
 
 ## Getting Started

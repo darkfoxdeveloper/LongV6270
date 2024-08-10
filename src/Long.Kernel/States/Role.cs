@@ -1,7 +1,11 @@
 ﻿using Long.Database.Entities;
+using Long.Kernel.Managers;
+using Long.Kernel.Modules.Systems.Team;
 using Long.Kernel.Network.Game.Packets;
 using Long.Kernel.Processors;
+using Long.Kernel.States.Items;
 using Long.Kernel.States.Magics;
+using Long.Kernel.States.Npcs;
 using Long.Kernel.States.Status;
 using Long.Kernel.States.User;
 using Long.Kernel.States.World;
@@ -12,6 +16,8 @@ using Long.World.Map;
 using Long.World.Roles;
 using System.Drawing;
 using static Long.Kernel.Network.Game.Packets.MsgAction;
+using static Long.Kernel.Network.Game.Packets.MsgDeadMark;
+using static Long.Kernel.Network.Game.Packets.MsgInteract;
 using static Long.Kernel.Network.Game.Packets.MsgName;
 using static Long.Kernel.Network.Game.Packets.MsgWalk;
 
@@ -21,7 +27,9 @@ namespace Long.Kernel.States
     {
         private static readonly ILogger logger = Log.ForContext<Role>();
 
-        protected uint idMap;
+		private readonly TimeOutMS statusTimer = new();
+
+		protected uint idMap;
 
         protected ushort currentX,
                          currentY;
@@ -32,125 +40,33 @@ namespace Long.Kernel.States
         public Role()
         {
             MagicData = new MagicData(this);
-        }
+			BattleSystem = new BattleSystem(this);
+			StatusSet = new StatusSet(this);
+		}
 
-        public virtual uint OwnerIdentity { get; set; }
-        public virtual uint Mesh { get; set; }
-        public virtual byte Level { get; set; }
+		public virtual bool HasGenerator { get; protected set; } = false;
 
-        #region Life and Mana
+		#region Identity
 
-        public virtual uint Life { get; set; }
-        public virtual uint MaxLife => maxLife;
-        public virtual uint Mana { get; set; }
-        public virtual uint MaxMana => maxMana;
+		public virtual uint OwnerIdentity { get; set; }
 
-        #endregion
+		#endregion
 
-        #region Role Type
+		#region Appearence
 
-        public bool IsPlayer()
-        {
-            return Identity >= IdentityManager.PLAYER_ID_FIRST && Identity < IdentityManager.PLAYER_ID_LAST;
-        }
+		public virtual uint Mesh { get; set; }
 
-        public bool IsMonster()
-        {
-            return Identity >= IdentityManager.MONSTERID_FIRST && Identity < IdentityManager.MONSTERID_LAST;
-        }
+		#endregion
 
-        public bool IsNpc()
-        {
-            return Identity >= IdentityManager.SYSNPCID_FIRST && Identity < IdentityManager.SYSNPCID_LAST;
-        }
+		#region Level
 
-        public bool IsDynaNpc()
-        {
-            return Identity >= IdentityManager.DYNANPCID_FIRST && Identity < IdentityManager.DYNANPCID_LAST;
-        }
+		public virtual byte Level { get; set; }
 
-        public bool IsCallPet()
-        {
-            return Identity >= IdentityManager.CALLPETID_FIRST && Identity < IdentityManager.CALLPETID_LAST;
-        }
+		#endregion
 
-        public bool IsTrap()
-        {
-            return Identity >= IdentityManager.TRAPID_FIRST && Identity < IdentityManager.TRAPID_LAST;
-        }
+		#region Map and position
 
-        public bool IsMapItem()
-        {
-            return Identity >= IdentityManager.MAPITEM_FIRST && Identity < IdentityManager.MAPITEM_LAST;
-        }
-
-        public bool IsFurniture()
-        {
-            return Identity >= IdentityManager.SCENE_NPC_MIN && Identity < IdentityManager.SCENE_NPC_MAX;
-        }
-
-        #endregion
-
-        #region Battle Attributes
-
-        public virtual int BattlePower => 1;
-
-        public virtual int MinAttack { get; } = 1;
-        public virtual int MaxAttack { get; } = 1;
-        public virtual int MagicAttack { get; } = 1;
-        public virtual int Defense { get; } = 0;
-        public virtual int MagicDefense { get; } = 0;
-        public virtual int MagicDefenseBonus { get; } = 0;
-        public virtual int Dodge { get; } = 0;
-        public virtual int AttackSpeed { get; } = 1000;
-        public virtual int Accuracy { get; } = 1;
-        public virtual int Blessing { get; } = 0;
-
-        public virtual int AddFinalAttack { get; } = 0;
-        public virtual int AddFinalMAttack { get; } = 0;
-        public virtual int AddFinalDefense { get; } = 0;
-        public virtual int AddFinalMDefense { get; } = 0;
-
-        public virtual int CriticalStrike => 0;
-        public virtual int SkillCriticalStrike => 0;
-        public virtual int Immunity => 0;
-        public virtual int Penetration => 0;
-        public virtual int Breakthrough => 0;
-        public virtual int Counteraction => 0;
-        public virtual int Block => 0;
-        public virtual int Detoxication => 0;
-        public virtual int FireResistance => 0;
-        public virtual int WaterResistance => 0;
-        public virtual int WoodResistance => 0;
-        public virtual int EarthResistance => 0;
-        public virtual int MetalResistance => 0;
-
-        public virtual int ExtraDamage { get; } = 0;
-
-        #endregion
-
-        #region Battle
-
-        public virtual bool IsAlive => Life > 0;
-        public virtual int SizeAddition => 1;
-        public virtual bool IsBowman => false;
-
-        public virtual bool IsFarWeapon()
-        {
-            return false;
-        }
-
-        #endregion
-
-        #region Magic
-
-        public MagicData MagicData { get; }
-
-        #endregion
-
-        #region Map and position
-
-        public virtual GameMap Map { get; protected set; }
+		public virtual GameMap Map { get; protected set; }
 
         public int Partition => Map?.Partition ?? -1;
 
@@ -188,67 +104,35 @@ namespace Long.Kernel.States
 
         public int GetDistance(Role target)
         {
+            if (target.IsPlayer())
+            {
+
+            }
             return GetDistance(target.X, target.Y);
         }
 
         public virtual Task EnterMapAsync()
         {
-            return Task.CompletedTask;
-        }
+			Map = MapManager.GetMap(MapIdentity);
+			if (Map != null)
+				return Map.AddAsync(this);
+			return Task.CompletedTask;
+		}
 
-        public virtual Task LeaveMapAsync()
+        public virtual async Task LeaveMapAsync()
         {
-            return Task.CompletedTask;
-        }
+			if (Map != null)
+			{
+				await Map.RemoveAsync(Identity);
+			}
 
-        public Role QueryRole(uint idRole)
-        {
-            return Map.QueryAroundRole(this, idRole);
+			Map = null;
         }
 
         #endregion
 
         #region Movement
-
-        public bool IsJumpPass(int x, int y, int alt)
-        {
-            List<Point> setLine = new();
-            Calculations.DDALineEx(X, Y, x, y, ref setLine);
-            if (setLine.Count <= 2)
-            {
-                return true;
-            }
-
-            if (x != setLine[^1].X)
-            {
-                return false;
-            }
-
-            if (y != setLine[^1].Y)
-            {
-                return false;
-            }
-
-            int currentAltitude = Map.GetFloorAlt(X, Y);
-            int lastAltitude = Map.GetFloorAlt(x, y);
-            if (lastAltitude - currentAltitude > alt)
-            {
-                return false;
-            }
-
-            foreach (Point point in setLine)
-            {
-                int nextCellAltitude = Map.GetFloorAlt(point.X, point.Y);
-                int difference = nextCellAltitude - currentAltitude;
-                if (difference > alt && difference < 1000)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
+        
         public async Task<bool> JumpPosAsync(int x, int y, bool sync = false)
         {
             if (x == X && y == Y)
@@ -415,11 +299,13 @@ namespace Long.Kernel.States
             }
 
             return false;
-        }
+        }		
 
-        public virtual Task ProcessOnMoveAsync()
+		public virtual Task ProcessOnMoveAsync()
         {
-            Action = EntityAction.Stand;
+			if (BattleSystem.IsActive())
+				BattleSystem.ResetBattle();
+			Action = EntityAction.Stand;
             return Task.CompletedTask;
         }
 
@@ -434,11 +320,82 @@ namespace Long.Kernel.States
             return Task.CompletedTask;
         }
 
-        #endregion
+		public virtual Task ProcessAfterAttackAsync()
+		{
+			DetachStatusAsync(StatusSet.INTENSIFY);
+			return Task.CompletedTask;
+		}
 
-        #region Action and Direction
+		public bool IsJumpPass(int x, int y, int alt)
+		{
+			List<Point> setLine = new();
+			Calculations.DDALineEx(X, Y, x, y, ref setLine);
+			if (setLine.Count <= 2)
+			{
+				return true;
+			}
 
-        public virtual FacingDirection Direction { get; protected set; }
+			if (x != setLine[^1].X)
+			{
+				return false;
+			}
+
+			if (y != setLine[^1].Y)
+			{
+				return false;
+			}
+
+			int currentAltitude = Map.GetFloorAlt(X, Y);
+			int lastAltitude = Map.GetFloorAlt(x, y);
+			if (lastAltitude - currentAltitude > alt)
+			{
+				return false;
+			}
+
+			foreach (Point point in setLine)
+			{
+				int nextCellAltitude = Map.GetFloorAlt(point.X, point.Y);
+				int difference = nextCellAltitude - currentAltitude;
+				if (difference > alt && difference < 1000)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		public bool IsArrowPass(int x, int y, int alt)
+		{
+			//{
+			//    var setLine = new List<Point>();
+			//    Calculations.DDALineEx(X, Y, x, y, ref setLine);
+
+			//    if (x != setLine[setLine.Count - 1].X)
+			//        return false;
+			//    if (y != setLine[setLine.Count - 1].Y)
+			//        return false;
+
+			//    var fAlt = (float) (Map.GetFloorAlt(X, Y) + alt + 0.5);
+			//    float fDelta = (Map.GetFloorAlt(x, y) - fAlt) / setLine.Count;
+
+			//    foreach (Point point in setLine)
+			//    {
+			//        if (Map.IsAltOver(point.X, point.Y, (int) fAlt))
+			//            return false;
+			//        fAlt += fDelta;
+			//    }
+
+			//    return true;
+			//}
+			return true;
+		}
+
+		#endregion
+
+		#region Action and Direction
+
+		public virtual FacingDirection Direction { get; protected set; }
 
         public virtual EntityAction Action { get; protected set; }
 
@@ -474,16 +431,308 @@ namespace Long.Kernel.States
             }
         }
 
-        #endregion
+		#endregion
 
-        #region Synchronization
+		#region Role Type
 
-        public virtual async Task<bool> AddAttributesAsync(ClientUpdateType type, long value)
+		public bool IsPlayer()
+		{
+			return (this is Character);
+			//return Identity >= IdentityManager.PLAYER_ID_FIRST && Identity < IdentityManager.PLAYER_ID_LAST;
+		}
+
+		public bool IsMonster()
+		{
+			return (this is Monster);
+			//return Identity >= IdentityManager.MONSTERID_FIRST && Identity < IdentityManager.MONSTERID_LAST;
+		}
+
+		public bool IsNpc()
+		{
+			return (this is Npc);
+			//return Identity >= IdentityManager.SYSNPCID_FIRST && Identity < IdentityManager.SYSNPCID_LAST;
+		}
+
+		public bool IsDynaNpc()
+		{
+			return (this is DynamicNpc);
+			//return Identity >= IdentityManager.DYNANPCID_FIRST && Identity < IdentityManager.DYNANPCID_LAST;
+		}
+
+		public bool IsCallPet()
+		{
+			return Identity >= IdentityManager.CALLPETID_FIRST && Identity < IdentityManager.CALLPETID_LAST;
+		}
+
+		public bool IsTrap()
+		{
+			return (this is MapTrap);
+			//return Identity >= IdentityManager.TRAPID_FIRST && Identity < IdentityManager.TRAPID_LAST;
+		}
+
+		public bool IsMapItem()
+		{
+			return (this is MapItem);
+			//return Identity >= IdentityManager.MAPITEM_FIRST && Identity < IdentityManager.MAPITEM_LAST;
+		}
+
+		public bool IsFurniture()
+		{
+			return Identity >= IdentityManager.SCENE_NPC_MIN && Identity < IdentityManager.SCENE_NPC_MAX;
+		}
+
+		#endregion
+
+		#region Life and Mana
+
+		public virtual uint Life { get; set; }
+		public virtual uint MaxLife => maxLife;
+		public virtual uint Mana { get; set; }
+		public virtual uint MaxMana => maxMana;
+
+		#endregion
+
+		#region Battle Attributes
+
+		public virtual int BattlePower => 1;
+
+		public virtual int MinAttack { get; } = 1;
+		public virtual int MaxAttack { get; } = 1;
+		public virtual int MagicAttack { get; } = 1;
+		public virtual int Defense { get; } = 0;
+		public virtual int MagicDefense { get; } = 0;
+		public virtual int MagicDefenseBonus { get; } = 0;
+		public virtual int Dodge { get; } = 0;
+		public virtual int AttackSpeed { get; } = 1000;
+		public virtual int Accuracy { get; } = 1;
+		public virtual int Blessing { get; } = 0;
+
+		public virtual int AddFinalAttack { get; } = 0;
+		public virtual int AddFinalMAttack { get; } = 0;
+		public virtual int AddFinalDefense { get; } = 0;
+		public virtual int AddFinalMDefense { get; } = 0;
+
+		public virtual int CriticalStrike => 0;
+		public virtual int SkillCriticalStrike => 0;
+		public virtual int Immunity => 0;
+		public virtual int Penetration => 0;
+		public virtual int Breakthrough => 0;
+		public virtual int Counteraction => 0;
+		public virtual int Block => 0;
+		public virtual int Detoxication => 0;
+		public virtual int FireResistance => 0;
+		public virtual int WaterResistance => 0;
+		public virtual int WoodResistance => 0;
+		public virtual int EarthResistance => 0;
+		public virtual int MetalResistance => 0;
+
+		public virtual int ExtraDamage { get; } = 0;
+
+		#endregion
+
+		#region Battle
+
+		public BattleSystem BattleSystem { get; init; }
+		public MagicData MagicData { get; init; }
+
+		public virtual bool IsAlive => Life > 0;
+		public virtual bool IsBowman => false;
+		public virtual bool IsShieldUser => false;
+		public virtual int SizeAddition => 1;
+
+		public virtual bool SetAttackTarget(Role target)
+		{
+			return false;
+		}
+
+		public virtual Task<bool> CheckCrimeAsync(Role target)
+		{
+			return Task.FromResult(false);
+		}
+
+		public virtual int AdjustWeaponDamage(int damage, Role target)
+		{
+			//return Calculations.MulDiv(damage, Defense2, Calculations.DEFAULT_DEFENCE2);
+			return damage;
+		}
+
+		public virtual int GetAttackRange(int sizeAdd)
+		{
+			return sizeAdd + 1;
+		}
+
+		public virtual bool IsAttackable(Role attacker)
+		{
+			return true;
+		}
+
+		public virtual bool IsImmunity(Role target)
+		{
+			if (target == null)
+			{
+				return true;
+			}
+
+			if (target.Identity == Identity)
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		public virtual bool IsFarWeapon()
+		{
+			return false;
+		}
+
+		public virtual Task<BattleSystem.AttackResult> AttackAsync(Role target)
+		{
+			return BattleSystem.CalcPowerAsync(Magic.MagicType.None, this, target);
+		}
+
+		public virtual Task<bool> BeAttackAsync(Magic.MagicType magicType, Role attacker, int power, bool reflectEnable)
+		{
+			return Task.FromResult(false);
+		}
+
+		public virtual async Task KillAsync(Role target, uint dieWay)
+		{
+			if (this is Monster guard && guard.IsGuard())
+			{
+				await BroadcastRoomMsgAsync(new MsgInteract
+				{
+					Action = MsgInteractType.Kill,
+					SenderIdentity = Identity,
+					TargetIdentity = target.Identity,
+					PosX = target.X,
+					PosY = target.Y,
+					Data = (int)dieWay
+				}, true);
+			}
+
+			await target.BeKillAsync(this);
+		}
+
+		public virtual Task BeKillAsync(Role attacker)
+		{
+			return Task.CompletedTask;
+		}
+
+		public async Task<bool> ProcessMagicAttackAsync(ushort usMagicType, uint idTarget, ushort x, ushort y,
+														uint autoActive = 0)
+		{
+			return await MagicData.ProcessMagicAttackAsync(usMagicType, idTarget, x, y, (MagicData.AutoActive)autoActive);
+		}
+
+		public async Task SendDamageMsgAsync(uint idTarget, int damage, InteractionEffect effect)
+		{
+            
+			await Map.BroadcastRoomMsgAsync(X, Y, new MsgInteract
+			{
+				SenderIdentity = Identity,
+				TargetIdentity = idTarget,
+				Data = damage,
+				Command = damage,
+				PosX = X,
+				PosY = Y,
+				Action = IsBowman ? MsgInteractType.Shoot : MsgInteractType.Attack,
+				Effect = effect,
+				EffectValue = damage
+			});
+		}
+
+		#endregion
+
+		#region Dead Mark
+
+		private readonly TimeOut deadMarkTimer = new();
+
+		public async Task SetDeadMarkAsync(int seconds)
+		{
+			if (!IsPlayer() && !IsMonster())
+			{
+				return;
+			}
+
+			if (!HasDeadMark())
+			{
+				await SendDeadMarkAsync(DeadMarkAction.Add);
+			}
+
+			deadMarkTimer.Startup(seconds);
+		}
+
+		public bool HasDeadMark()
+		{
+			return deadMarkTimer.IsActive() && !deadMarkTimer.IsTimeOut();
+		}
+
+		public Task CheckDeadMarkAsync()
+		{
+			if (deadMarkTimer.TimeOver())
+			{
+				return RemoveDeadMarkAsync();
+			}
+
+			return Task.CompletedTask;
+		}
+
+		public Task RemoveDeadMarkAsync()
+		{
+			deadMarkTimer.Clear();
+			return SendDeadMarkAsync(DeadMarkAction.Remove);
+		}
+
+		public Task SendDeadMarkAsync(DeadMarkAction action)
+		{
+			return BroadcastRoomMsgAsync(new MsgDeadMark
+			{
+				Action = action,
+				TargetIdentity = Identity
+			}, true);
+		}
+
+		#endregion
+
+		#region Scapegoat
+
+		public bool Scapegoat { get; set; } = false;
+
+		public virtual async Task<bool> CheckScapegoatAsync(Role target)
+		{
+			Magic scapegoat = MagicData[6003];
+			if (scapegoat != null && Scapegoat && scapegoat.IsReady())
+			{
+				return await ProcessMagicAttackAsync(scapegoat.Type, target.Identity, target.X, target.Y);
+			}
+			return false;
+		}
+
+		public Task SetScapegoatAsync(bool on)
+		{
+			Scapegoat = on;
+			return SendAsync(new MsgInteract
+			{
+				Action = MsgInteractType.CounterKillSwitch,
+				SenderIdentity = Identity,
+				TargetIdentity = Identity,
+				Data = on ? 1 : 0,
+				PosX = X,
+				PosY = Y
+			});
+		}
+
+		#endregion
+
+		#region Synchronization
+
+		public virtual async Task<bool> AddAttributesAsync(ClientUpdateType type, long value)
         {
             long currAttr;
             switch (type)
             {
-                case ClientUpdateType.TeamMemberHP:
+                case ClientUpdateType.Hitpoints:
                     currAttr = Life = (uint)Math.Min(MaxLife, Math.Max(Life + value, 0));
                     break;
 
@@ -504,7 +753,7 @@ namespace Long.Kernel.States
         {
             switch (type)
             {
-                case ClientUpdateType.TeamMemberHP:
+                case ClientUpdateType.Hitpoints:
                     value = Life = (uint)Math.Max(0, Math.Min(MaxLife, value));
                     break;
 
@@ -926,13 +1175,32 @@ namespace Long.Kernel.States
         public Task SetCrimeStatusAsync(int nSecs)
         {
             return AttachStatusAsync(this, StatusSet.CRIME, 0, nSecs, 0);
-        }
+		}
 
-        #endregion
 
-        #region Processor Queue
 
-        public void QueueAction(Func<Task> task)
+		#endregion
+
+		#region Team
+
+		public virtual ITeam GetTeam()
+		{
+			if (OwnerIdentity != 0)
+			{
+				Role owner = Map.QueryAroundRole(this, OwnerIdentity);
+				if (owner is Character user)
+				{
+					return user.Team;
+				}
+			}
+			return null;
+		}
+
+		#endregion
+
+		#region Processor Queue
+
+		public void QueueAction(Func<Task> task)
         {
             // do not queue actions if not in map
             if (Map != null)
@@ -941,179 +1209,208 @@ namespace Long.Kernel.States
             }
         }
 
-        #endregion
+		#endregion
 
-        #region Timer
+		#region Timer
 
-        public virtual Task OnTimerAsync()
-        {
-            return Task.CompletedTask;
-        }
+		public virtual async Task OnTimerAsync()
+		{
+			if (statusTimer.ToNextTime())
+			{
+				foreach (IStatus status in StatusSet.Status.Values)
+				{
+					await status.OnTimerAsync();
 
-        #endregion
+					if (!status.IsValid && status.Identity != StatusSet.GHOST && status.Identity != StatusSet.DEAD)
+					{
+						await StatusSet.DelObjAsync(status.Identity);
 
-        #region Socket
+						if (this is Character user)
+						{
+							if (status.Identity == StatusSet.SUPERMAN || status.Identity == StatusSet.CYCLONE)
+							{
+								await user.FinishXpAsync();
+							}
+						}
+					}
+				}
 
-        public async Task SendEffectAsync(string effect, bool self)
-        {
-            var msg = new MsgName
-            {
-                Identity = Identity,
-                Action = StringAction.RoleEffect
-            };
-            msg.Strings.Add(effect);
-            await Map.BroadcastRoomMsgAsync(X, Y, msg, self ? 0 : Identity);
-        }
+				await CheckDeadMarkAsync();
+			}
 
-        public Task SendEffectAsync(Character target, string effect)
-        {
-            var msg = new MsgName
-            {
-                Identity = Identity,
-                Action = StringAction.RoleEffect
-            };
-            msg.Strings.Add(effect);
-            return target.SendAsync(msg);
-        }
+			if (!IsAlive)
+			{
+				return;
+			}
+		}
 
-        public async Task SendAsync(string message, TalkChannel channel = TalkChannel.TopLeft, Color? color = null)
-        {
-            await SendAsync(new MsgTalk(channel, color ?? Color.Red, message));
-        }
+		#endregion
 
-        public virtual Task SendAsync(IPacket msg)
-        {
-            logger.Warning($"{GetType().Name} - {Identity} has no SendAsync(IPacket) handler");
-            return Task.CompletedTask;
-        }
+		#region Socket
 
-        public virtual Task SendAsync(byte[] msg)
-        {
-            logger.Warning($"{GetType().Name} - {Identity} has no SendAsync(byte[]) handler");
-            return Task.CompletedTask;
-        }
+		public async Task SendEffectAsync(string effect, bool self)
+		{
+			var msg = new MsgName
+			{
+				Identity = Identity,
+				Action = StringAction.RoleEffect
+			};
+			msg.Strings.Add(effect);
+			await Map.BroadcastRoomMsgAsync(X, Y, msg, self ? 0 : Identity);
+		}
 
-        public virtual Task SendSpawnToAsync(Character player)
-        {
-            logger.Warning($"{GetType().Name} - {Identity} has no SendSpawnToAsync handler");
-            return Task.CompletedTask;
-        }
+		public Task SendEffectAsync(Character target, string effect)
+		{
+			var msg = new MsgName
+			{
+				Identity = Identity,
+				Action = StringAction.RoleEffect
+			};
+			msg.Strings.Add(effect);
+			return target.SendAsync(msg);
+		}
 
-        public virtual Task SendSpawnToAsync(Character player, int x, int y)
-        {
-            logger.Warning($"{GetType().Name} - {Identity} has no SendSpawnToAsync(player, x, y) handler");
-            return Task.CompletedTask;
-        }
+		public async Task SendAsync(string message, TalkChannel channel = TalkChannel.TopLeft, Color? color = null)
+		{
+			await SendAsync(new MsgTalk(channel, color ?? Color.White, message));
+		}
 
-        public virtual async Task BroadcastRoomMsgAsync(IPacket msg, bool self)
-        {
-            if (Map != null)
-            {
-                await Map.BroadcastRoomMsgAsync(X, Y, msg, !self ? Identity : 0);
-            }
-        }
+		public virtual Task SendAsync(IPacket msg)
+		{
+			logger.Warning($"{GetType().Name} - {Identity} has no SendAsync(IPacket) handler");
+			return Task.CompletedTask;
+		}
 
-        public virtual Task BroadcastRoomMsgAsync(string message, TalkChannel channel = TalkChannel.TopLeft, Color? color = null)
-        {
-            return BroadcastRoomMsgAsync(new MsgTalk(channel, color ?? Color.White, message), true);
-        }
+		public virtual Task SendAsync(byte[] msg)
+		{
+			logger.Warning($"{GetType().Name} - {Identity} has no SendAsync(byte[]) handler");
+			return Task.CompletedTask;
+		}
 
-        #endregion
+		public virtual Task SendSpawnToAsync(Character player)
+		{
+			logger.Warning($"{GetType().Name} - {Identity} has no SendSpawnToAsync handler");
+			return Task.CompletedTask;
+		}
 
-        public enum FacingDirection : byte
-        {
-            Begin = SouthEast,
-            SouthWest = 0,
-            West = 1,
-            NorthWest = 2,
-            North = 3,
-            NorthEast = 4,
-            East = 5,
-            SouthEast = 6,
-            South = 7,
-            End = South,
-            Invalid = End + 1
-        }
+		public virtual Task SendSpawnToAsync(Character player, int x, int y)
+		{
+			logger.Warning($"{GetType().Name} - {Identity} has no SendSpawnToAsync(player, x, y) handler");
+			return Task.CompletedTask;
+		}
 
-        public enum EntityAction : ushort
-        {
-            None,
-            Dance1 = 1,
-            Dance2 = 2,
-            Dance3 = 3,
-            Dance4 = 4,
-            Dance5 = 5,
-            Dance6 = 6,
-            Dance7 = 7,
-            Dance8 = 8,
-            Stand = 100,
-            Happy = 150,
-            Angry = 160,
-            Sad = 170,
-            Wave = 190,
-            Bow = 200,
-            Kneel = 210,
-            Cool = 230,
-            Sit = 250,
-            Lie = 270,
+		public virtual async Task BroadcastRoomMsgAsync(IPacket msg, bool self)
+		{
+			if (Map != null)
+			{
+				await Map.BroadcastRoomMsgAsync(X, Y, msg, !self ? Identity : 0);
+			}
+		}
 
-            InteractionKiss = 34466,
-            InteractionHold = 34468,
-            InteractionHug = 34469,
-            CoupleDances = 34474
-        }
+		public virtual Task BroadcastRoomMsgAsync(string message, TalkChannel channel = TalkChannel.TopLeft, Color? color = null)
+		{
+			return BroadcastRoomMsgAsync(new MsgTalk(channel, color ?? Color.White, message), true);
+		}
 
-        public const uint USER_KILL_ACTION = 80_000_001;
-        public const uint USER_DIE_ACTION = 80_000_003;
-        public const uint USER_UPLEV_ACTION = 80_000_004;
-        public const uint MONSTER_DIE_ACTION = 80_000_010;
+		#endregion
 
-        public const byte MAX_UPLEV = 140;
+		#region Constants
+		public enum FacingDirection : byte
+		{
+			Begin = SouthEast,
+			SouthWest = 0,
+			West = 1,
+			NorthWest = 2,
+			North = 3,
+			NorthEast = 4,
+			East = 5,
+			SouthEast = 6,
+			South = 7,
+			End = South,
+			Invalid = End + 1
+		}
 
-        public const int EXPBALL_AMOUNT = 600;
-        public const int CHGMAP_LOCK_SECS = 10;
-        public const int ADD_ENERGY_STAND_MS = 1000;
-        public const int ADD_ENERGY_STAND = 3;
-        public const int ADD_ENERGY_SIT = 15;
-        public const int ADD_ENERGY_LIE = ADD_ENERGY_SIT / 2;
-        public const int DEFAULT_USER_ENERGY = 70;
-        public const int MAX_USER_ATTRIB_POINTS = 900;
-        public const int KEEP_STAND_MS = 1500;
-        public const int MIN_SUPERMAP_KILLS = 25;
-        public const int VETERAN_DIFF_LEVEL = 20;
-        public const int HIGHEST_WATER_WIZARD_PROF = 135;
-        public const int SLOWHEALLIFE_MS = 1000;
-        public const int AUTOHEALLIFE_TIME = 10;
-        public const int AUTOHEALLIFE_EACHPERIOD = 6;
-        public const int TICK_SECS = 10;
-        public const int MAX_PKLIMIT = 10000;
-        public const int PILEMONEY_CHANGE = 5000;
-        public const int ADDITIONALPOINT_NUM = 3;
-        public const int PK_DEC_TIME = 360;
-        public const int PKVALUE_DEC_ONCE = -1;
-        public const int PKVALUE_DEC_ONCE_IN_PRISON = -3;
-        public const int USER_ATTACK_SPEED = 1000;
-        public const int POISONDAMAGE_INTERVAL = 2;
-        public const long MAX_INVENTORY_MONEY = 10_000_000_000;
-        public const long MAX_STORAGE_MONEY = 1_000_000_000;
-        public const uint MAX_INVENTORY_EMONEY = 1_000_000_000;
+		public enum EntityAction : ushort
+		{
+			None,
+			Dance1 = 1,
+			Dance2 = 2,
+			Dance3 = 3,
+			Dance4 = 4,
+			Dance5 = 5,
+			Dance6 = 6,
+			Dance7 = 7,
+			Dance8 = 8,
+			Stand = 100,
+			Happy = 150,
+			Angry = 160,
+			Sad = 170,
+			Wave = 190,
+			Bow = 200,
+			Kneel = 210,
+			Cool = 230,
+			Sit = 250,
+			Lie = 270,
 
-        public const int MAX_STRENGTH_POINTS_VALUE = 4000; // Chi Points
+			InteractionKiss = 34466,
+			InteractionHold = 34468,
+			InteractionHug = 34469,
+			CoupleDances = 34474
+		}
 
-        public const int MASTER_WEAPONSKILLLEVEL = 12;
-        public const int MAX_WEAPONSKILLLEVEL = 20;
+		public const uint USER_KILL_ACTION = 80_000_001;
+		public const uint USER_DIE_ACTION = 80_000_003;
+		public const uint USER_UPLEV_ACTION = 80_000_004;
+		public const uint MONSTER_DIE_ACTION = 80_000_010;
 
-        public const int MAX_MENUTASKSIZE = 10;
-        public const int MAX_VAR_AMOUNT = 16;
+		public const byte MAX_UPLEV = 140;
 
-        public const int SYNWAR_PROFFER_PERCENT = 1;
-        public const int SYNWAR_MONEY_PERCENT = 2;
-        public const int SYNWAR_NOMONEY_DAMAGETIMES = 10;
+		public const int EXPBALL_AMOUNT = 600;
+		public const int CHGMAP_LOCK_SECS = 10;
+		public const int ADD_ENERGY_STAND_MS = 1000;
+		public const int ADD_ENERGY_STAND = 3;
+		public const int ADD_ENERGY_SIT = 15;
+		public const int ADD_ENERGY_LIE = ADD_ENERGY_SIT / 2;
+		public const int DEFAULT_USER_ENERGY = 70;
+		public const int MAX_USER_ATTRIB_POINTS = 900;
+		public const int KEEP_STAND_MS = 1500;
+		public const int MIN_SUPERMAP_KILLS = 25;
+		public const int VETERAN_DIFF_LEVEL = 20;
+		public const int HIGHEST_WATER_WIZARD_PROF = 135;
+		public const int SLOWHEALLIFE_MS = 1000;
+		public const int AUTOHEALLIFE_TIME = 10;
+		public const int AUTOHEALLIFE_EACHPERIOD = 6;
+		public const int TICK_SECS = 10;
+		public const int MAX_PKLIMIT = 10000;
+		public const int PILEMONEY_CHANGE = 5000;
+		public const int ADDITIONALPOINT_NUM = 3;
+		public const int PK_DEC_TIME = 360;
+		public const int PKVALUE_DEC_ONCE = -1;
+		public const int PKVALUE_DEC_ONCE_IN_PRISON = -3;
+		public const int USER_ATTACK_SPEED = 1000;
+		public const int POISONDAMAGE_INTERVAL = 2;
+		public const long MAX_INVENTORY_MONEY = 10_000_000_000;
+		public const long MAX_STORAGE_MONEY = 1_000_000_000;
+		public const uint MAX_INVENTORY_EMONEY = 1_000_000_000;
 
-        public const int MAX_ATTRIBUTE_POINTS = 900;
+		public const int MAX_STRENGTH_POINTS_VALUE = 4000; // Chi Points
 
-        public const int NPCDIEDELAY_SECS = 10;
+		public const int MASTER_WEAPONSKILLLEVEL = 12;
+		public const int MAX_WEAPONSKILLLEVEL = 20;
 
-        public const int MAX_JUMP_ALTITUDE = 0x64; // according to CHero::CanJump(C3_POS)
-    }
+		public const int MAX_MENUTASKSIZE = 10;
+		public const int MAX_VAR_AMOUNT = 16;
+
+		public const int SYNWAR_PROFFER_PERCENT = 1;
+		public const int SYNWAR_MONEY_PERCENT = 2;
+		public const int SYNWAR_NOMONEY_DAMAGETIMES = 10;
+
+		public const int MAX_ATTRIBUTE_POINTS = 900;
+
+		public const int NPCDIEDELAY_SECS = 10;
+
+		public const int MAX_JUMP_ALTITUDE = 0x64; // according to CHero::CanJump(C3_POS)
+		#endregion
+
+	}
 }

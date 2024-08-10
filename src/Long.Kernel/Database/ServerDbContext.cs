@@ -31,22 +31,28 @@ namespace Long.Kernel.Database
         public virtual DbSet<DbWeaponSkill> WeaponSkills { get; set; }
         public virtual DbSet<DbWeaponSkillUp> WeaponSkillUps { get; set; }
         public virtual DbSet<DbMonstertype> Monstertypes { get; set; }
-        public virtual DbSet<DbItemDrop> ItemDrops { get; set; }
+		public virtual DbSet<DbMonsterKill> MonsterKills { get; set; }
+		public virtual DbSet<DbItemDrop> ItemDrops { get; set; }
         public virtual DbSet<DbItemPickUp> ItemPickUps { get; set; }
         public virtual DbSet<DbSuperFlag> SuperFlags { get; set; }
         public virtual DbSet<DbGoods> Goods { get; set; }
         public virtual DbSet<DbAction> Actions { get; set; }
-        public virtual DbSet<DbTask> Tasks { get; set; }
+		public virtual DbSet<DbMineCtrl> MineRates { get; set; }
+		public virtual DbSet<DbTask> Tasks { get; set; }
         public virtual DbSet<DbNpc> Npcs { get; set; }
         public virtual DbSet<DbDynanpc> DynamicNpcs { get; set; }
         public virtual DbSet<DbConfig> Configs { get; set; }
-        public virtual DbSet<DbDynaGlobalData> DynaGlobalDatas { get; set; }
+		public virtual DbSet<DbArenic> Arenics { get; set; }
+		public virtual DbSet<DbArenicHonor> ArenicHonors { get; set; }
+		public virtual DbSet<DbDynaGlobalData> DynaGlobalDatas { get; set; }
         public virtual DbSet<DbStatistic> Statistics { get; set; }
         public virtual DbSet<DbStatisticDaily> DailyStatistics { get; set; }
         public virtual DbSet<DbTaskDetail> TaskDetails { get; set; }
         public virtual DbSet<DbMagic> Magics { get; set; }
-        public virtual DbSet<DbItemLimit> ItemsLimit { get; set; }
-        public virtual DbSet<DbMagictype> Magictypes { get; set; }
+		public virtual DbSet<DbDisdain> Disdains { get; set; }
+		public virtual DbSet<DbItemLimit> ItemsLimit { get; set; }
+		public virtual DbSet<DbDetainedItem> DetainedItems { get; set; }
+		public virtual DbSet<DbMagictype> Magictypes { get; set; }
         public virtual DbSet<DbStatus> Status { get; set; }
         public virtual DbSet<DbLevelExperience> LevelExperiences { get; set; }
         public virtual DbSet<DbSuperman> Supermen { get; set; }
@@ -67,7 +73,8 @@ namespace Long.Kernel.Database
         public virtual DbSet<DbSyndicateAttr> SyndicatesAttr { get; set; }
         public virtual DbSet<DbSyndicateMemberHistory> SyndicateMemberHistories { get; set; }
         public virtual DbSet<DbTotemAdd> TotemAdds { get; set; }
-        public virtual DbSet<DbSynAdvertisingInfo> SynAdvertisingInfos { get; set; }
+		public virtual DbSet<DbPkStatistic> PkStatistics { get; set; }
+		public virtual DbSet<DbSynAdvertisingInfo> SynAdvertisingInfos { get; set; }
         public virtual DbSet<DbPigeon> Pigeons { get; set; }
         public virtual DbSet<DbPigeonQueue> PigeonQueues { get; set; }
         public virtual DbSet<DbAchievement> Achievements { get; set; }
@@ -133,12 +140,14 @@ namespace Long.Kernel.Database
         public virtual DbSet<DbUserTitle> UserTitles { get; set; }
         public virtual DbSet<DbTitleRule> TitleRules { get; set; }
         public virtual DbSet<DbTitleType> TitleTypes { get; set; }
-
-        public virtual DbSet<DbMessageLog> MessageLogs { get; set; }
+		public virtual DbSet<DbTrapType> TrapsType { get; set; }
+		public virtual DbSet<DbMessageLog> MessageLogs { get; set; }
         public virtual DbSet<DbEMoney> EMoneyLogs { get; set; }
         public virtual DbSet<DbEMoneyMono> EMoneyMonoLogs { get; set; }
+		public virtual DbSet<DbAwardConfig> AwardConfigs { get; set; }
+		public virtual DbSet<DbChangeNameBackup> ChangeNameBackups { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 

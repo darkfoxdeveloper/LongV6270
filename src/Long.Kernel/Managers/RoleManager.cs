@@ -12,6 +12,9 @@ using Long.Network.Packets;
 using Long.Kernel.Settings;
 using Long.Kernel.Network.Cross.Client.Packets;
 using Long.Network.Packets.Cross;
+using Long.Kernel.States.Npcs;
+using System.Diagnostics;
+using Long.Kernel.Database;
 
 namespace Long.Kernel.Managers
 {
@@ -21,10 +24,11 @@ namespace Long.Kernel.Managers
 
         private static readonly ConcurrentDictionary<uint, Character> userSet = new();
         private static readonly ConcurrentDictionary<uint, Role> roleSet = new();
+		private static readonly ConcurrentDictionary<uint, DbSuperman> superman = new();
+		private static readonly ConcurrentDictionary<uint, DbMonstertype> monsterTypes = new();
+		private static readonly ConcurrentDictionary<uint, DbMonsterTypeMagic> monsterMagics = new();
 
-        private static readonly ConcurrentDictionary<uint, DbMonstertype> monsterTypes = new();
-
-        private static bool isShutdown;
+		private static bool isShutdown;
         private static bool isMaintenanceEntrance;
         private static bool isCooperatorMode;
         private static GameServerSettings serverSettings => GameServerSettings.Instance;
@@ -39,11 +43,22 @@ namespace Long.Kernel.Managers
 
         public static async Task InitializeAsync()
         {
-            foreach (DbMonstertype mob in await MonsterypeRepository.GetAsync())
+			logger.Information("Starting Role Manager");
+
+			var supermen = await SupermanRepository.GetAsync();
+			foreach (var superman in supermen)
+			{
+				RoleManager.superman.TryAdd(superman.UserIdentity, superman);
+			}
+			foreach (DbMonstertype mob in await MonsterypeRepository.GetAsync())
             {
                 monsterTypes.TryAdd(mob.Id, mob);
             }
-        }
+			foreach (DbMonsterTypeMagic magic in await MonsterTypeMagicRepository.GetAsync())
+			{
+				monsterMagics.TryAdd(magic.Id, magic);
+			}
+		}
 
         #region Login Request
 
@@ -105,12 +120,12 @@ namespace Long.Kernel.Managers
                 return false;
             }
 
-            if (user.Character.IsPm() && user.AccountIdentity < 10_000)
-            {
-                await user.DisconnectWithMessageAsync(MsgConnectEx.RejectionCode.AccountLocked);
-                logger.Information($"{user.Character.Name} no administration account ID.");
-                return false;
-            }
+            //if (user.Character.IsPm() && user.AccountIdentity < 10_000)
+            //{
+            //    await user.DisconnectWithMessageAsync(MsgConnectEx.RejectionCode.AccountLocked);
+            //    logger.Information($"{user.Character.Name} no administration account ID.");
+            //    return false;
+            //}
 
             if (userSet.Count > serverSettings.Game.MaxOnlinePlayers && user.AuthorityLevel <= 1 && !user.Character.IsGm())
             {
@@ -328,20 +343,65 @@ namespace Long.Kernel.Managers
             return roleSet.TryRemove(idRole, out _);
         }
 
-        #endregion
+		#endregion
 
-        #region Monster
+		#region Superman
+		public static async Task AddOrUpdateSupermanAsync(uint idUser, int amount)
+		{
+			if (!superman.TryGetValue(idUser, out var sm))
+			{
+				superman.TryAdd(idUser, sm = new DbSuperman
+				{
+					UserIdentity = idUser,
+					Amount = (uint)amount
+				});
+				await ServerDbContext.UpdateAsync(sm);
+			}
+			else
+			{
+				sm.Amount = (uint)amount;
+				await ServerDbContext.UpdateAsync(sm);
+			}
+		}
 
-        public static DbMonstertype GetMonstertype(uint type)
+		public static int GetSupermanPoints(uint idUser)
+		{
+			return (int)(superman.TryGetValue(idUser, out var value) ? value.Amount : 0);
+		}
+
+		public static int GetSupermanRank(uint idUser)
+		{
+			int result = 1;
+			foreach (var super in superman.Values.OrderByDescending(x => x.Amount))
+			{
+				if (super.UserIdentity == idUser)
+				{
+					return result;
+				}
+
+				result++;
+			}
+			return result;
+		}
+		#endregion
+
+		#region Monster
+
+		public static DbMonstertype GetMonstertype(uint type)
         {
             return monsterTypes.TryGetValue(type, out DbMonstertype mob) ? mob : null;
         }
 
-        #endregion
+		public static List<DbMonsterTypeMagic> GetMonsterMagics(uint type)
+		{
+			return monsterMagics.Values.Where(x => x.MonsterType == type).ToList();
+		}
 
-        #region User validation
+		#endregion
 
-        public static bool IsValidName(string szName)
+		#region User validation
+
+		public static bool IsValidName(string szName)
         {
             if (long.TryParse(szName, out _))
             {
@@ -420,9 +480,26 @@ namespace Long.Kernel.Managers
             }
         }
 
-        #endregion
+		#endregion
 
-        public static void SetMaintenanceStart()
+		public static long RoleTimerTicks { get; private set; }
+		public static int ProcessedRoles { get; private set; }
+
+		public static async Task OnRoleTimerAsync()
+		{
+			int processedRoles = 0;
+			Stopwatch sw = Stopwatch.StartNew();
+			foreach (var role in roleSet.Values.Where(x => x is not Character && x is not BaseNpc))
+			{
+				await role.OnTimerAsync();
+				processedRoles++;
+			}
+			sw.Stop();
+			ProcessedRoles = processedRoles;
+			RoleTimerTicks = sw.ElapsedTicks;
+		}
+
+		public static void SetMaintenanceStart()
         {
             isMaintenanceEntrance = true;
         }

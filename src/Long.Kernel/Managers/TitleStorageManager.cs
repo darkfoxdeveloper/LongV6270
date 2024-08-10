@@ -29,5 +29,7 @@ namespace Long.Kernel.Managers
         {
             return titleTypes.FirstOrDefault(x => x.Type == titleType && x.Identity == titleId);
         }
-    }
+
+        public static List<DbTitleType> GetTitlesType() => titleTypes;
+	}
 }

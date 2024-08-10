@@ -54,7 +54,9 @@ namespace Long.Kernel.Network.Game.Packets
             CharacterName = character.Name;
             SpouseName = character.MateName;
             SpouseName = StrNone;
-        }
+            WindWalker = character.WindWalker;
+            Nobility = (byte)character.NobilityRank;
+		}
 
         public uint Identity { get; set; }
         public ushort AppearenceType { get; set; }
@@ -92,14 +94,14 @@ namespace Long.Kernel.Network.Game.Packets
         public uint LeagueContribute { get; set; }
         public string CharacterName { get; set; }
         public string SpouseName { get; set; }
-
-        /// <summary>
-        ///     Encodes the packet structure defined by this message class into a byte packet
-        ///     that can be sent to the client. Invoked automatically by the client's send
-        ///     method. Encodes using byte ordering rules interoperable with the game client.
-        /// </summary>
-        /// <returns>Returns a byte packet of the encoded packet.</returns>
-        public override byte[] Encode()
+		public uint WindWalker { get; set; }
+		/// <summary>
+		///     Encodes the packet structure defined by this message class into a byte packet
+		///     that can be sent to the client. Invoked automatically by the client's send
+		///     method. Encodes using byte ordering rules interoperable with the game client.
+		/// </summary>
+		/// <returns>Returns a byte packet of the encoded packet.</returns>
+		public override byte[] Encode()
         {
             using var writer = new PacketWriter();
             writer.Write((ushort)PacketType.MsgUserInfo); // 2

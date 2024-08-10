@@ -757,7 +757,7 @@ namespace Long.Kernel.Scripting.Action
                         {
                             user.QueueAction(async () =>
                             {
-                                await user.AddAttributesAsync(ClientUpdateType.TeamMemberHP, lifeValue);
+                                await user.AddAttributesAsync(ClientUpdateType.Hitpoints, lifeValue);
                                 //    if (!user.IsAlive)
                                 //        await user.BeKillAsync(null);
                             });
@@ -768,7 +768,7 @@ namespace Long.Kernel.Scripting.Action
                         {
                             user.QueueAction(async () =>
                             {
-                                await user.SetAttributesAsync(ClientUpdateType.TeamMemberHP, (ulong)lifeValue);
+                                await user.SetAttributesAsync(ClientUpdateType.Hitpoints, (ulong)lifeValue);
                                 //if (!user.IsAlive)
                                 //    await user.BeKillAsync(null);
                             });
@@ -1454,55 +1454,55 @@ namespace Long.Kernel.Scripting.Action
 
                 case "mentor":
                     {
-                        //int mentorValue = int.Parse(value);
-                        //if (opt.Equals(">"))
-                        //{
-                        //    return user.EnlightenPoints > mentorValue;
-                        //}
+                        int mentorValue = int.Parse(value);
+                        if (opt.Equals(">"))
+                        {
+                            return user.EnlightenPoints > mentorValue;
+                        }
 
-                        //if (opt.Equals(">="))
-                        //{
-                        //    return user.EnlightenPoints >= mentorValue;
-                        //}
+                        if (opt.Equals(">="))
+                        {
+                            return user.EnlightenPoints >= mentorValue;
+                        }
 
-                        //if (opt.Equals("<"))
-                        //{
-                        //    return user.EnlightenPoints < mentorValue;
-                        //}
+                        if (opt.Equals("<"))
+                        {
+                            return user.EnlightenPoints < mentorValue;
+                        }
 
-                        //if (opt.Equals("<="))
-                        //{
-                        //    return user.EnlightenPoints <= mentorValue;
-                        //}
+                        if (opt.Equals("<="))
+                        {
+                            return user.EnlightenPoints <= mentorValue;
+                        }
 
-                        //if (opt.Equals("=") || opt.Equals("=="))
-                        //{
-                        //    return user.EnlightenPoints == mentorValue;
-                        //}
+                        if (opt.Equals("=") || opt.Equals("=="))
+                        {
+                            return user.EnlightenPoints == mentorValue;
+                        }
 
-                        //if (opt.Equals("+="))
-                        //{
-                        //    if (mentorValue > 0)
-                        //    {
-                        //        user.EnlightenPoints += (uint)mentorValue;
-                        //    }
-                        //    else if (mentorValue < 0)
-                        //    {
-                        //        if (mentorValue > user.EnlightenPoints)
-                        //        {
-                        //            return false;
-                        //        }
+                        if (opt.Equals("+="))
+                        {
+                            if (mentorValue > 0)
+                            {
+                                user.EnlightenPoints += (uint)mentorValue;
+                            }
+                            else if (mentorValue < 0)
+                            {
+                                if (mentorValue > user.EnlightenPoints)
+                                {
+                                    return false;
+                                }
 
-                        //        user.EnlightenPoints -= (uint)mentorValue;
-                        //    }
-                        //    else
-                        //    {
-                        //        break;
-                        //    }
+                                user.EnlightenPoints -= (uint)mentorValue;
+                            }
+                            else
+                            {
+                                break;
+                            }
 
-                        //    await user.SynchroAttributesAsync(ClientUpdateType.EnlightenPoints, user.EnlightenPoints, true);
-                        //    return true;
-                        //}
+                            await user.SynchroAttributesAsync(ClientUpdateType.EnlightenPoints, user.EnlightenPoints, true);
+                            return true;
+                        }
 
                         break;
                     }
@@ -1569,7 +1569,7 @@ namespace Long.Kernel.Scripting.Action
 
             if (param.Equals("life", StringComparison.InvariantCultureIgnoreCase))
             {
-                user.QueueAction(() => user.SetAttributesAsync(ClientUpdateType.TeamMemberHP, user.MaxLife));
+                user.QueueAction(() => user.SetAttributesAsync(ClientUpdateType.Hitpoints, user.MaxLife));
                 return true;
             }
 

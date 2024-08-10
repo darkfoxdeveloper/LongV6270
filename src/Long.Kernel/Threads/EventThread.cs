@@ -36,7 +36,7 @@ namespace Long.Kernel.Threads
 
             if (!GameServerSettings.IsRealm)
             {
-                dailyReset = DailyResetRepository.GetLatest();
+				dailyReset = DailyResetRepository.GetLatest();
                 if (dailyReset != null)
                 {
                     logger.Information("Latest daily reset: {0}", dailyReset.RunTime);

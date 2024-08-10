@@ -520,13 +520,13 @@ namespace Long.Kernel.Scripting.Action
                 case 0:
                     {
                         int reduceLife = (int)(user.MaxLife * percent / 100d);
-                        await user.SetAttributesAsync(ClientUpdateType.TeamMemberHP, (ulong)Math.Max(1, user.Life - reduceLife));
+                        await user.SetAttributesAsync(ClientUpdateType.Hitpoints, (ulong)Math.Max(1, user.Life - reduceLife));
                         return true;
                     }
                 case 1:
                     {
                         int reduceLife = (int)(user.Life * percent / 100d);
-                        await user.SetAttributesAsync(ClientUpdateType.TeamMemberHP, (ulong)Math.Max(1, user.Life - reduceLife));
+                        await user.SetAttributesAsync(ClientUpdateType.Hitpoints, (ulong)Math.Max(1, user.Life - reduceLife));
                         return true;
                     }
             }

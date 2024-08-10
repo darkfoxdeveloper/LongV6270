@@ -10,6 +10,10 @@ using Long.Database.Entities;
 using Long.Kernel.States.Items;
 using static Long.Kernel.States.User.Character;
 using Long.Kernel.States.Status;
+using Long.Network.Packets.Ai;
+using Long.Game.Network.Ai.Packets;
+using Long.Kernel.Network.Ai;
+using Long.Kernel.States.Magics;
 
 namespace Long.Kernel.Network.Game.Packets
 {
@@ -306,9 +310,13 @@ namespace Long.Kernel.Network.Game.Packets
                             return;
                         }
 
-                        await user.UserPackage.SendAsync();
+						await user.SynchroAttributesAsync(ClientUpdateType.CurrentSashSlots, user.SashSlots);
+						await user.SynchroAttributesAsync(ClientUpdateType.MaximumSashSlots, MAXIMUM_SASH_SLOTS);
+						await user.UserPackage.SendAsync();
                         await user.TitleStorage.InitializeAsync();
-                        await user.SendAsync(this);
+						await user.SendDetainRewardAsync();
+						await user.SendDetainedEquipmentAsync();
+						await user.SendAsync(this);
                         break;
                     }
 
@@ -334,7 +342,9 @@ namespace Long.Kernel.Network.Game.Packets
                             await user.Relation.SendAllEnemyAsync();
                         }
 
-                        await user.SendAsync(this);
+						await user.PkStatistic.InitializeAsync();
+
+						await user.SendAsync(this);
                         break;
                     }
 
@@ -345,8 +355,14 @@ namespace Long.Kernel.Network.Game.Packets
                             return;
                         }
 
-                        await user.WeaponSkill.SendAsync();
-                        await user.SendAsync(this);
+						await user.WeaponSkill.InitializeAsync();
+						await user.WeaponSkill.SendAsync();
+						// user.AstProf.InitializeAsync();
+						await user.Fate.InitializeAsync();
+						await user.JiangHu.InitializeAsync();
+						await user.InnerStrength.InitializeAsync();
+						await user.Achievements.InitializeAsync();
+						await user.SendAsync(this);
                         break;
                     }
 
@@ -357,7 +373,14 @@ namespace Long.Kernel.Network.Game.Packets
                             return;
                         }
 
-                        await user.SendBlessAsync();
+						await user.MagicData.InitializeAsync();
+						await user.LoadMonsterKillsAsync();
+						if (user.IsGm() && !user.MagicData.CheckType(3321))
+						{
+							await user.MagicData.CreateAsync(3321, 0);
+						}
+
+						await user.SendBlessAsync();
                         await user.SendAsync(this);
                         break;
                     }
@@ -476,8 +499,29 @@ namespace Long.Kernel.Network.Game.Packets
 
                         break;
                     }
+				case ActionType.MapMine: // 99
+					{
+						if (user == null)
+						{
+							return;
+						}
 
-                case ActionType.CharacterRevive: // 94
+						if (!user.IsAlive)
+						{
+							await user.SendAsync(StrDead);
+							return;
+						}
+
+						if (!user.Map.IsMineField())
+						{
+							await user.SendAsync(StrNoMine);
+							return;
+						}
+
+						user.StartMining();
+						break;
+					}
+				case ActionType.CharacterRevive: // 94
                     {
                         if (user == null)
                         {
@@ -669,7 +713,12 @@ namespace Long.Kernel.Network.Game.Packets
                                 await role.BroadcastRoomMsgAsync(this, true);
                             }
                             await role.ProcessAfterMoveAsync();
-                        }
+                            MsgAiAction action = new MsgAiAction
+                            {
+                                Data = new MsgAiActionContract { Action = AiActionType.Jump, Identity = user.Identity, X = user.X, Y = user.Y, Direction = (int)user.Direction }
+                            };
+                            NpcServer.Instance.Send(NpcServer.NpcClient, action.Encode());
+						}
                         break;
                     }
 
@@ -842,7 +891,42 @@ namespace Long.Kernel.Network.Game.Packets
                         break;
                     }
 
-                case ActionType.InventorySash: // 256
+				case ActionType.UpgradeMagicSkill: // 252
+					{
+						if (!user.IsUnlocked())
+						{
+							await user.SendSecondaryPasswordInterfaceAsync();
+							return;
+						}
+
+						const int minCps = 1;
+						Magic skill = user.MagicData[(ushort)Command];
+						if (skill == null)
+						{
+							return;
+						}
+
+						if (skill.Level >= skill.MaxLevel)
+						{
+							return;
+						}
+
+						int amount = Math.Max(minCps, (int)((1 - skill.Experience / (double)skill.NeedExp) * skill.EmoneyCost));
+						if (!await user.SpendConquerPointsAsync(amount, true, true))
+						{
+							return;
+						}
+
+						await skill.ChangeLevelAsync((byte)(skill.Level + 1));
+						skill.Experience = 0;
+
+						await skill.SendAsync();
+						await skill.SaveAsync();
+						await user.SendAsync(this);
+						break;
+					}
+
+				case ActionType.InventorySash: // 256
                     {
                         await user.AddSashSpaceAsync(1);
                         break;
@@ -866,11 +950,31 @@ namespace Long.Kernel.Network.Game.Packets
                         await client.SendAsync(new MsgPlayerAttribInfo(client.Character));
                         break;
                     }
+				case ActionType.AwardFirstCredit:
+					{
+						await user.ClaimFirstCreditGiftAsync();
+						break;
+					}
+				case ActionType.EndRaceTrack: // 402
+					{
+						//HorseRacing horseRacing = EventManager.GetEvent<HorseRacing>();
+						//if (horseRacing == null)
+						//{
+						//	return;
+						//}
 
-                default:
+						//await user.SendAsync(this);
+						//await horseRacing.CrossFinishLineAsync(user);
+						break;
+					}
+
+				default:
                     {
                         logger.Warning("MsgAction unhandled subtype {0}.\n" + PacketDump.Hex(Encode()), Action);
-                        break;
+#if DEBUG
+                        Console.WriteLine("MsgAction unhandled subtype {0}.\n" + PacketDump.Hex(Encode()), Action);
+#endif
+						break;
                     }
             }
         }

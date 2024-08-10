@@ -42,7 +42,8 @@ namespace Long.Kernel.Managers
             TaskDetail,
             Team,
             Totem,
-            Trade
+            Trade,
+            Qualifying
         }
 
         private static readonly ILogger logger = Log.ForContext<ModuleManager>();
@@ -282,6 +283,7 @@ namespace Long.Kernel.Managers
                 }
                 catch (Exception ex)
                 {
+                    
                     logger.Error(ex, ex.Message);
                 }
             }

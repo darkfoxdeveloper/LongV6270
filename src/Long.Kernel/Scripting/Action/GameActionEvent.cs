@@ -8,6 +8,8 @@ using Long.Kernel.States.World;
 using Long.Kernel.States;
 using Long.Kernel.Database;
 using Long.Kernel.Processors;
+using Long.Network.Packets.Ai;
+using Long.Kernel.Network.Ai;
 
 namespace Long.Kernel.Scripting.Action
 {
@@ -157,22 +159,22 @@ namespace Long.Kernel.Scripting.Action
                 return false;
             }
 
-            //var msg = new MsgAiSpawnNpc
-            //{
-            //    Mode = AiSpawnNpcMode.Spawn
-            //};
-            //msg.List.Add(new MsgAiSpawnNpc<AiClient>.SpawnNpc
-            //{
-            //    GeneratorId = idGen,
-            //    MapId = idMap,
-            //    MonsterType = idType,
-            //    OwnerId = idOwner,
-            //    X = usPosX,
-            //    Y = usPosY,
-            //    OwnerType = dwOwnerType,
-            //    Data = dwData
-            //});
-            //await BroadcastNpcMsgAsync(msg);
+            var msg = new Long.Game.Network.Ai.Packets.MsgAiSpawnNpc			
+			{
+                Mode = AiSpawnNpcMode.Spawn
+            };
+            msg.List.Add(new MsgAiSpawnNpc<AiClient>.SpawnNpc
+            {
+                GeneratorId = idGen,
+                MapId = idMap,
+                MonsterType = idType,
+                OwnerId = idOwner,
+                X = usPosX,
+                Y = usPosY,
+                OwnerType = dwOwnerType,
+                Data = dwData
+            });
+            NpcServer.Instance.Send(NpcServer.NpcClient,msg.Encode());
             return true;
         }
 

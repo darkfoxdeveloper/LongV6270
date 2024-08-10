@@ -40,7 +40,7 @@ namespace Long.Kernel.States.Magics
             set => magic.OldLevel = value;
         }
         public MagicSort Sort => (MagicSort)magictype.Sort;
-        public MagicAutoActive AutoActive => (MagicAutoActive)magictype.AutoActive;
+        public AutoActive AutoActive => (AutoActive)magictype.AutoActive;
         public byte Crime => magictype.Crime;
         public byte Ground => magictype.Ground;
         public byte Multi => magictype.Multi;

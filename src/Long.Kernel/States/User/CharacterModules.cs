@@ -180,12 +180,13 @@ namespace Long.Kernel.States.User
         #region Guide
 
         public IGuide Guide { get; set; }
+		public ITutor Tutor { get; set; }
 
-        #endregion
+		#endregion
 
-        #region AstProf (Sub-classes)
+		#region AstProf (Sub-classes)
 
-        public ulong AstProfRanks
+		public ulong AstProfRanks
         {
             get => user.AstProfRank;
             set => user.AstProfRank = value;

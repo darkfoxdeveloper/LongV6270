@@ -162,7 +162,7 @@ namespace Long.Module.JiangHu.States
             if (user.LastLogout.HasValue)
             {
                 int minutesSinceLastLogin =
-                    (int)(user.LoginTime - user.LastLogout.Value)
+                    (int)(user.LastLogin - user.LastLogout.Value)
                     .TotalMinutes; // LoginTime is the previous login time, this initialization runs before Login completion, so this has not been overriten
                 if (minutesSinceLastLogin > 0)
                 {

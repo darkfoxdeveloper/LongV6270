@@ -26,9 +26,16 @@ using Long.Kernel.Network.Cross.Server.Packets;
 using Long.Network.Packets.Cross;
 using Long.Kernel.Modules.Systems.AstProf;
 using Long.Kernel.States.Storage;
-using Org.BouncyCastle.Asn1.Mozilla;
-using Long.Kernel.Modules.Systems.Team;
 using System.Data;
+using Long.Network.Packets.Ai;
+using Long.Game.Network.Ai.Packets;
+using Long.Kernel.Network.Ai;
+using Long.Kernel.Network.Piglet;
+using Long.Kernel.Network.Piglet.Packets;
+using static Long.Kernel.Network.Game.Packets.MsgHangUp;
+using static Long.Kernel.States.Magics.MagicData;
+using SharpCompress.Common;
+using System.Numerics;
 
 namespace Long.Kernel.States.User
 {
@@ -39,10 +46,11 @@ namespace Long.Kernel.States.User
 
         private readonly TimeOut dateSyncTimer = new();
         private readonly TimeOut autoHealTimer = new(AUTOHEALLIFE_TIME);
+		private readonly TimeOut miningTimer = new();
 
-        public Character(GameClient client, DbUser user)
-        {
-            this.user = user;
+		public Character(GameClient client, DbUser user)
+        {			
+			this.user = user;
             Client = client;
 
             mesh = user.Mesh;
@@ -60,20 +68,26 @@ namespace Long.Kernel.States.User
             SignIn = new DailySignIn(this);
             CoatStorage = new CoatStorage(this);
             TitleStorage = new TitleStorage(this);
+			PkStatistic = new PkStatistic(this);
 
-            energyTimer.Update();
+
+			energyTimer.Update();
             autoHealTimer.Update();
             pkDecreaseTimer.Update();
             xpPointsTimer.Update();
             dateSyncTimer.Startup(30);
-        }
+			//ReallyRevive(true,false);
+		}
 
         public GameClient Client { get; }
         public Screen Screen { get; }
 
-        #region Identity
+		public override bool IsBowman => RightHand?.IsBow() == true;
+		public bool IsAssassin => RightHand?.IsAssassinKnife() == true;
 
-        public override uint Identity
+		#region Identity
+
+		public override uint Identity
         {
             get => user.Identity;
         }
@@ -96,11 +110,23 @@ namespace Long.Kernel.States.User
             set => user.Mate = value;
         }
 
-        #endregion
+		public uint WindWalker
+		{
+			get => user.Flag;
+			set => user.Flag = value;
+		}
 
-        #region Authority
+		public PrivilegeFlag Flag
+		{
+			get => (PrivilegeFlag)user.Flag;
+			set => user.Flag = (uint)value;
+		}
 
-        public bool IsPm()
+		#endregion
+
+		#region Authority
+
+		public bool IsPm()
         {
             return Name.Contains("[PM]");
         }
@@ -183,47 +209,59 @@ namespace Long.Kernel.States.User
             set => user.FirstProfession = value;
         }
 
+		#endregion
+
+		#region Pk Statistic
+
+		public PkStatistic PkStatistic { get; init; }
+
+		#endregion
+
+		#region Level and Experience
+		public bool AutoAllot
+		{
+			get => user.AutoAllot != 0;
+			set => user.AutoAllot = (byte)(value ? 1 : 0);
+		}
+
+		public override byte Level
+		{
+			get => user?.Level ?? 0;
+			set => user.Level = Math.Min(MAX_UPLEV, Math.Max((byte)1, value));
+		}
+
+		public ulong Experience
+		{
+			get => user?.Experience ?? 0;
+			set
+			{
+				if (Level >= MAX_UPLEV)
+				{
+					return;
+				}
+
+				user.Experience = value;
+			}
+		}
+
+		public ulong AutoHangUpExperience
+		{
+			get;
+			set;
+		}
+
+		public byte Metempsychosis
+		{
+			get => user?.Rebirths ?? 0;
+			set => user.Rebirths = value;
+		}
+
+		public bool IsAutoHangUp { get; set; }
         #endregion
 
-        #region Experience
+		#region Attribute Points
 
-        public bool AutoAllot
-        {
-            get => user.AutoAllot != 0;
-            set => user.AutoAllot = (byte)(value ? 1 : 0);
-        }
-
-        public override byte Level
-        {
-            get => user?.Level ?? 0;
-            set => user.Level = Math.Min(MAX_UPLEV, Math.Max((byte)1, value));
-        }
-
-        public ulong Experience
-        {
-            get => user?.Experience ?? 0;
-            set
-            {
-                if (Level >= MAX_UPLEV)
-                {
-                    return;
-                }
-
-                user.Experience = value;
-            }
-        }
-
-        public byte Metempsychosis
-        {
-            get => user?.Rebirths ?? 0;
-            set => user.Rebirths = value;
-        }
-
-        #endregion
-
-        #region Attribute Points
-
-        public ushort Strength
+		public ushort Strength
         {
             get => user?.Strength ?? 0;
             set => user.Strength = value;
@@ -301,7 +339,8 @@ namespace Long.Kernel.States.User
                 {
                     result += (uint)status.Power;
                 }
-                return result;
+				result += (uint)(JiangHu?.MaxLife??0);
+				return result;
             }
         }
 
@@ -315,37 +354,28 @@ namespace Long.Kernel.States.User
         {
             get
             {
-                var result = (uint)(Spirit * 5);
-                switch (Profession)
-                {
-                    case 132:
-                    case 142:
-                        result *= 3;
-                        break;
-                    case 133:
-                    case 143:
-                        result *= 4;
-                        break;
-                    case 134:
-                    case 144:
-                        result *= 5;
-                        break;
-                    case 135:
-                    case 145:
-                        result *= 6;
-                        break;
-                }
+				byte ManaBoost = 5;
+
+				sbyte Class = (sbyte)(Profession / 10);
+				if (Class == 13 || Class == 14)
+					ManaBoost += (byte)(5 * (Class - (Profession * 10)));
+
+				var result = (uint)(Spirit * ManaBoost);
+
                 for (ItemPosition pos = ItemPosition.EquipmentBegin; pos <= ItemPosition.EquipmentEnd; pos++)
                 {
-                    result += (uint)(UserPackage.GetEquipment(pos)?.Mana ?? 0);
-                }
-                return result;
-            }
-        }
+                    var a = UserPackage.GetEquipment(pos);
+					result += (uint)(UserPackage.GetEquipment(pos)?.Mana ?? 0);
+				}
+				result += (uint)(JiangHu?.MaxMana??0);
+				return result;
+			}
+		}
 
-        #endregion
 
-        #region Currency
+
+		#endregion
+		#region Currency
 
         public ulong Silvers
         {
@@ -486,8 +516,34 @@ namespace Long.Kernel.States.User
             await SynchroAttributesAsync(ClientUpdateType.ConquerPoints, ConquerPoints);
             return true;
         }
+		public async Task<bool> SpendConquerPointsAsync(int amount, bool bound, bool notify)
+		{
+			if (!bound || ConquerPointsBound == 0)
+			{
+				return await SpendConquerPointsAsync(amount, notify);
+			}
 
-        public async Task SaveEmoneyLogAsync(EmoneyOperationType type, uint target, uint targetBalance, long amount)
+			if (amount > ConquerPoints + ConquerPointsBound)
+			{
+				if (notify)
+				{
+					await SendAsync(StrNotEnoughEmoney, TalkChannel.TopLeft, Color.Red);
+				}
+
+				return false;
+			}
+
+			if (ConquerPointsBound > amount)
+			{
+				return await SpendBoundConquerPointsAsync(amount, notify);
+			}
+
+			int remain = (int)(amount - ConquerPointsBound);
+			await SpendBoundConquerPointsAsync((int)ConquerPointsBound);
+			await SpendConquerPointsAsync(remain);
+			return true;
+		}
+		public async Task SaveEmoneyLogAsync(EmoneyOperationType type, uint target, uint targetBalance, long amount)
         {
             if (amount == 0)
             {
@@ -843,7 +899,20 @@ namespace Long.Kernel.States.User
                 await Map.AddAsync(this);
                 await Map.SendMapInfoAsync(this);
                 await ProcessAfterMoveAsync();
-                await OnEnterMapAsync(this, Map);
+                MsgAiAction action = new MsgAiAction
+                {
+                    Data = new MsgAiActionContract
+                    {
+                        Action = AiActionType.FlyMap,
+                        Identity = Identity,
+                        TargetIdentity = idMap,
+                        X = X,
+                        Y = Y
+                    }
+                };
+
+                NpcServer.Instance.Send(NpcServer.NpcClient, action.Encode());
+				await OnEnterMapAsync(this, Map);
             }
         }
 
@@ -854,7 +923,19 @@ namespace Long.Kernel.States.User
                 await ProcessOnMoveAsync();
                 await OnLeaveMapAsync(this, Map);
                 await Map.RemoveAsync(Identity);
-            }
+				MsgAiAction action = new MsgAiAction
+				{
+					Data = new MsgAiActionContract
+					{
+						Action = AiActionType.FlyMap,
+						Identity = Identity,
+						TargetIdentity = idMap,
+						X = X,
+						Y = Y
+					}
+				};
+				NpcServer.Instance.Send(NpcServer.NpcClient, action.Encode());
+			}
 
             await Screen.ClearAsync();
         }
@@ -1094,11 +1175,16 @@ namespace Long.Kernel.States.User
             await base.ProcessOnAttackAsync();
         }
 
-        #endregion
+		public Role QueryRole(uint idRole)
+		{
+			return Map.QueryAroundRole(this, idRole);
+		}
 
-        #region XP and Stamina
+		#endregion
 
-        public int KoCount { get; set; }
+		#region XP and Stamina
+
+		public int KoCount { get; set; }
         public byte Energy { get; private set; } = DEFAULT_USER_ENERGY;
         public byte MaxEnergy => (byte)(IsBlessed ? 150 : 100);
 
@@ -1370,11 +1456,79 @@ namespace Long.Kernel.States.User
             });
         }
 
-        #endregion
+		#endregion
 
-        #region Weapon Skill
+		#region Offline TG
 
-        public WeaponSkill WeaponSkill { get; init; }
+		public ushort MaxTrainingMinutes => (ushort)Math.Min(1440 + 60 * VipLevel, (UnixTimestamp.ToDateTime(user.HeavenBlessing) - DateTime.Now).TotalMinutes);
+
+		public ushort CurrentTrainingMinutes => (ushort)Math.Min((DateTime.Now - LastLogin).TotalMinutes * 10, MaxTrainingMinutes);
+
+		public ushort CurrentOfflineTrainingTime
+		{
+			get
+			{
+				if (user.AutoExercise == 0 || user.LogoutTime2 == 0)
+				{
+					return 0;
+				}
+
+				DateTime endTime = UnixTimestamp.ToDateTime(user.LogoutTime2).AddMinutes(user.AutoExercise);
+				if (endTime < DateTime.Now)
+				{
+					return CurrentTrainingTime;
+				}
+
+				var remainingTime = (int)Math.Min((DateTime.Now - UnixTimestamp.ToDateTime(user.LogoutTime2)).TotalMinutes, CurrentTrainingTime);
+				return (ushort)remainingTime;
+			}
+		}
+
+		public ushort CurrentTrainingTime => user.AutoExercise;
+
+		public bool IsOfflineTraining => user.AutoExercise != 0;
+
+		public async Task EnterAutoExerciseAsync()
+		{
+			if (!IsBlessed)
+			{
+				return;
+			}
+
+			user.AutoExercise = CurrentTrainingMinutes;
+			user.LogoutTime2 = (uint)DateTime.Now.ToUnixTimestamp();
+			await SaveAsync();
+		}
+
+		public async Task LeaveAutoExerciseAsync()
+		{
+			await AwardExperienceAsync(CalculateExpBall(GetAutoExerciseExpTimes()), true);
+
+			await FlyMapAsync(RecordMapIdentity, RecordMapX, RecordMapY);
+
+			user.AutoExercise = 0;
+			user.LogoutTime2 = 0;
+			await SaveAsync();
+		}
+
+		public int GetAutoExerciseExpTimes()
+		{
+			const int MAX_REWARD = 3000; // 5 Exp Balls every 8 hours
+			const double REWARD_EVERY_N_MINUTES = 480;
+			return (int)(Math.Min(CurrentOfflineTrainingTime, CurrentTrainingTime) / REWARD_EVERY_N_MINUTES *
+						  MAX_REWARD);
+		}
+
+		public ExperiencePreview GetCurrentOnlineTGExp()
+		{
+			return PreviewExpBallUsage(GetAutoExerciseExpTimes());
+		}
+
+		#endregion
+
+		#region Weapon Skill
+
+		public WeaponSkill WeaponSkill { get; init; }
 
         public async Task AddWeaponSkillExpAsync(ushort type, int experience, bool byAction = false)
         {
@@ -1499,11 +1653,31 @@ namespace Long.Kernel.States.User
             set => user.ShowType = value;
         }
 
-        #endregion
+		#endregion
 
-        #region Cool Action
+		#region Jar
 
-        private readonly TimeOut coolSyncTimer = new(5);
+		public async Task AddJarKillsAsync(int stcType)
+		{
+			Item jar = UserPackage.GetItemByType(Item.TYPE_JAR);
+			if (jar != null)
+				if (jar.MaximumDurability == stcType)
+				{
+					jar.Data += 1;
+					await jar.SaveAsync();
+
+					if (jar.Data % 50 == 0)
+					{
+						await jar.SendJarAsync();
+					}
+				}
+		}
+
+		#endregion
+
+		#region Cool Action
+
+		private readonly TimeOut coolSyncTimer = new(5);
 
         public bool IsCoolEnable()
         {
@@ -1811,7 +1985,7 @@ namespace Long.Kernel.States.User
                         return true;
                     }
 
-                case ClientUpdateType.TeamMemberHP:
+                case ClientUpdateType.Hitpoints:
                     {
                         value = Life = (uint)Math.Min(MaxLife, Math.Max(Life + value, 0));
                         await BroadcastTeamLifeAsync();
@@ -1828,8 +2002,10 @@ namespace Long.Kernel.States.User
 
                 default:
                     {
-                        return await base.AddAttributesAsync(type, value);
-                    }
+						bool result = await base.AddAttributesAsync(type, value);
+                        await SaveAsync();
+						return result;
+					}
             }
 
             if (save)
@@ -2001,7 +2177,7 @@ namespace Long.Kernel.States.User
                         break;
                     }
 
-                case ClientUpdateType.TeamMemberHP:
+                case ClientUpdateType.Hitpoints:
                     {
                         Life = (uint)Math.Min(value, MaxLife);
                         screen = true;
@@ -2548,208 +2724,154 @@ namespace Long.Kernel.States.User
             return true;
         }
 
-        #endregion
+		#endregion
 
-        #region Session
+		#region Session
 
-        public DateTime? PreviousLoginTime { get; private set; }
-        public DateTime LoginTime => UnixTimestamp.ToDateTime(user.LoginTime);
-        public DateTime? LastLogout
+		
+
+		//public async Task OnDisconnectAsync()
+		//{
+		//	if (PigletClient.Instance?.Actor != null)
+		//	{
+		//		await PigletClient.Instance.Actor.SendAsync(new MsgPigletUserLogin()
+		//		{
+		//			Data = new MsgPigletUserLogin<PigletActor>.UserLoginData
+		//			{
+		//				Users = new List<MsgPigletUserLogin<PigletActor>.UserData>
+		//					{
+		//						new MsgPigletUserLogin<PigletActor>.UserData
+		//						{
+		//							AccountId = Client.AccountIdentity,
+		//							UserId = Identity,
+		//							IsLogin = false
+		//						}
+		//					}
+		//			}
+		//		});
+		//	}
+
+		//	using var ctx = new ServerDbContext();
+		//	if (Map?.IsRecordDisable() == false)
+		//	{
+		//		if (IsAlive)
+		//		{
+		//			user.MapID = idMap;
+		//			user.X = currentX;
+		//			user.Y = currentY;
+		//		}
+		//	}
+
+		//	user.LogoutTime = (uint)DateTime.Now.ToUnixTimestamp();
+		//	user.OnlineSeconds += (int)(LastLogout - LastLogin).TotalSeconds;
+
+		//	if (Booth != null)
+		//	{
+		//		await Booth.LeaveMapAsync();
+		//	}
+
+		//	if (Team != null && Team.IsLeader(Identity))
+		//	{
+		//		await Team.DismissAsync(this, true);
+		//	}
+		//	else if (Team != null)
+		//	{
+		//		await Team.DismissMemberAsync(this);
+		//	}
+
+		//	if (Trade != null)
+		//	{
+		//		await Trade.SendCloseAsync();
+		//	}
+
+		//	await EventManager.OnLogoutAsync(this);
+		//	await NotifyOfflineFriendAsync();
+
+		//	foreach (Tutor apprentice in apprentices.Values.Where(x => x.Student != null))
+		//	{
+		//		await apprentice.SendTutorAsync();
+		//		await apprentice.Student.SynchroAttributesAsync(ClientUpdateType.ExtraBattlePower, 0, 0);
+		//	}
+
+		//	if (tutorAccess != null)
+		//	{
+		//		ctx.TutorAccess.Update(tutorAccess);
+		//	}
+
+		//	foreach (IStatus status in StatusSet.Status.Values.Where(x => x.Model != null))
+		//	{
+		//		if (status is StatusMore && status.RemainingTimes == 0)
+		//		{
+		//			continue;
+		//		}
+
+		//		status.Model.LeaveTimes = (uint)status.RemainingTimes;
+		//		status.Model.RemainTime = (uint)status.RemainingTime;
+
+		//		if (status.Identity == 0)
+		//		{
+		//			ctx.Status.Add(status.Model);
+		//		}
+		//		else
+		//		{
+		//			ctx.Status.Update(status.Model);
+		//		}
+		//	}
+
+		//	await WeaponSkill.SaveAllAsync(ctx);
+
+		//	if (Syndicate != null && SyndicateMember != null)
+		//	{
+		//		SyndicateMember.LastLogout = DateTime.Now;
+		//		await SyndicateMember.SaveAsync();
+		//	}
+
+		//	if (Map != null)
+		//	{
+		//		QueueAction(LeaveMapAsync);
+		//	}
+
+		//	await Fate.SaveAsync();
+		//	await JiangHu.LogoutAsync();
+
+		//	if (!isDeleted)
+		//	{
+		//		ctx.Users.Update(user);
+		//	}
+		//	ctx.GameLoginRecords.Add(new DbGameLoginRecord
+		//	{
+		//		AccountIdentity = Client.AccountIdentity,
+		//		UserIdentity = Identity,
+		//		LoginTime = LastLogin,
+		//		LogoutTime = LastLogout,
+		//		ServerVersion = $"6609",
+		//		IpAddress = Client.IpAddress,
+		//		MacAddress = Client.MacAddress,
+		//		OnlineTime = (uint)(LastLogout - LastLogin).TotalSeconds
+		//	});
+		//	await ctx.SaveChangesAsync();
+		//}
+
+
+
+		#endregion
+
+		#region Timer
+
+        public async Task OnBattleTimerAsync()
         {
-            get => UnixTimestamp.ToNullableDateTime(user.LogoutTime);
-            set => user.LogoutTime = (uint)UnixTimestamp.FromDateTime(value);
-        }
-
-        private static readonly ILogger checkSumErrLogger = Logger.CreateConsoleLogger("player_chksum_err");
-
-        public async Task OnLoginAsync()
-        {
-            if (user.FirstLogin == 0)
+            if (BattleSystem.IsActive()
+                && BattleSystem.NextAttack(GetInterAtkRate()))
             {
-                LuaScriptManager.Run(this, null, null, null, "System_PlayLoginFirst()");
-                user.FirstLogin = (uint)UnixTimestamp.Now;
+                await BattleSystem.ProcessAttackAsync();
             }
 
-            await RealmManager.SubmitServerListAsync(this);
-
-            DbUser mate = await UserRepository.FindByIdentityAsync(MateIdentity);
-            if (mate != null)
+            if (MagicData.State != MagicState.None)
             {
-                MateName = mate.Name;
-            }
-
-            await DoDailyResetAsync(true);
-            await GameAction.ExecuteActionAsync(1000000, this, null, null);
-
-            if (user.LoginTime > 0)
-            {
-                PreviousLoginTime = UnixTimestamp.ToDateTime(user.LoginTime);
-            }
-
-            if (ConquerPoints > 0)
-            {
-                uint currentCheckSum = CalculateEmoneyCheckSum(user.ConquerPoints, user.Identity);
-                if (user.ConquerPointsCheckSum != currentCheckSum)
-                {
-                    logger.Warning("User {0} {1} has invalid value {2} of emoney. Last registered checksum {3} and current is {4}", Identity, Name, ConquerPoints, user.ConquerPointsCheckSum, currentCheckSum);
-                    checkSumErrLogger.Information("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10}", user.Identity, user.Name, user.MapID, user.X, user.Y, user.Silver, user.StorageMoney, user.ConquerPoints, user.ConquerPointsBound, user.ConquerPointsCheckSum, currentCheckSum);
-                    await SetAttributesAsync(ClientUpdateType.ConquerPoints, 0);
-                }
-            }
-
-            await InitializeActivityTasksAsync();
-            await StageGoal.InitializeAsync();
-            await SignIn.InitializeAsync();
-
-
-#if !DEBUG
-            if (IsGm())
-            {
-                await TransformAsync(3321, int.MaxValue, true);
-            }
-#endif
-
-            user.LoginTime = (uint)UnixTimestamp.Now;
-            await UserRepository.UpdateAsync(user);
-        }
-
-        public async Task OnLoginAfterModulesAsync()
-        {
-            if (!IsUnlocked())
-            {
-                await SendAsync(new Msg2ndPsw
-                {
-                    Password = 0x1,
-                    Action = Msg2ndPsw.PasswordRequestType.CorrectPassword
-                });
-            }
-
-            await LoadTitlesAsync();
-            await SendMerchantAsync();
-            await LoadLeaveWordAsync();
-            await LoadStatusAsync();
-            await SendBlessAsync();
-            LoadExperienceData();
-            await SendMultipleExpAsync();
-            await SendLuckAsync();
-
-            await SynchroAttributesAsync(ClientUpdateType.CurrentSashSlots, SashSlots);
-            await SynchroAttributesAsync(ClientUpdateType.MaximumSashSlots, MAXIMUM_SASH_SLOTS);
-
-            await SignIn.SendAsync();
-            await MailBox.InitializeAsync();
-            await Achievements.InitializeAsync();
-            await TitleStorage.SendAllAsync();
-
-            await LoadUnionAsync();
-
-            await Screen.SynchroScreenAsync();
-        }
-
-        public async Task OnLogoutAsync()
-        {
-            if (CurrentServer.HasValue && CurrentServerID != RealmManager.ServerIdentity)
-            {
-                await SendOSMsgAsync(new MsgCrossRealmActionS
-                {
-                    Data = new()
-                    {
-                        Action = (uint)CrossRealmAction.KickoutPlayer,
-                        ServerID = RealmManager.ServerIdentity,
-                        Command = RealmUserId
-                    }
-                }, CurrentServerID);
-            }
-
-            try
-            {
-                if (!deleted)
-                {
-                    await OnUserLogoutAsync(this);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "Error on module logout. {0}", ex.Message);
-            }
-
-            try
-            {
-                if (!deleted)
-                {
-                    if (Map?.IsRecordDisable() == false)
-                    {
-                        if (IsAlive)
-                        {
-                            user.MapID = idMap;
-                            user.X = currentX;
-                            user.Y = currentY;
-                        }
-                    }
-                }
-
-                await LeaveMapAsync();
-
-                if (SlotMachineResult.HasValue)
-                {
-                    await GetSlotMachineRewardAsync();
-                }
-
-                if (!deleted)
-                {
-                    user.LogoutTime = (uint)UnixTimestamp.Now;
-                    await UserRepository.UpdateAsync(user);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex, "Error on user logout! {0}", ex.Message);
-            }
-            finally
-            {
-                logger.Information("User {1} {0} has disconnected", Name, Identity);
-                WorldProcessor.Instance.Queue(WorldProcessor.NO_MAP_GROUP, () =>
-                {
-                    RoleManager.ForceLogoutUser(Identity);
-                    return Task.CompletedTask;
-                });
+                await MagicData.OnTimerAsync();
             }
         }
-
-        public async Task DoDailyResetAsync(bool login)
-        {
-            if (login && (!PreviousLoginTime.HasValue || PreviousLoginTime.Value.Date >= DateTime.Now.Date || LastLogout?.Date >= DateTime.Now.Date))
-            {
-                // already reseted
-                return;
-            }
-
-            if (!login)
-            {
-                Statistic.ClearDailyStatistic();
-
-                if (TaskDetail != null)
-                {
-                    await TaskDetail.DailyResetAsync();
-                }
-
-                if (JiangHu != null)
-                {
-                    await JiangHu.DailyClearAsync();
-                }
-
-                if (SignIn != null)
-                {
-                    await SignIn.ResetAsync();
-                }
-            }
-        }
-
-        #endregion
-
-        #region Timer
-
-        public override async Task OnTimerAsync()
+		public override async Task OnTimerAsync()
         {
             if (Map == null)
             {
@@ -2962,17 +3084,392 @@ namespace Long.Kernel.States.User
                 {
                     if (IsAlive)
                     {
-                        await AddAttributesAsync(ClientUpdateType.TeamMemberHP, AUTOHEALLIFE_EACHPERIOD);
+                        await AddAttributesAsync(ClientUpdateType.Hitpoints, AUTOHEALLIFE_EACHPERIOD);
                     }
                 });
             }
         }
 
-        #endregion
+		#endregion
 
-        #region Socket
+		#region Call Pet
 
-        public override Task SendAsync(IPacket msg)
+		private TimeOut callPetKeepSecs = new();
+		private Monster callPet;
+
+		public async Task<bool> CallPetAsync(uint type, ushort x, ushort y, int keepSecs = 0)
+		{
+			await KillCallPetAsync();
+
+			Monster pet = await Monster.CreateCallPetAsync(this, type, x, y);
+			if (pet == null)
+				return false;
+
+			callPet = pet;
+
+			if (keepSecs > 0)
+			{
+				callPetKeepSecs.Startup(keepSecs);
+			}
+			else
+			{
+				callPetKeepSecs.Clear();
+			}
+			return true;
+		}
+
+		public async Task KillCallPetAsync(bool now = false)
+		{
+			if (callPet == null)
+				return;
+
+			if (!callPet.IsDeleted())
+			{
+				await callPet.DelMonsterAsync(now);
+				callPet = null;
+			}
+		}
+
+		public Role GetCallPet()
+		{
+			return callPet;
+		}
+
+		#endregion
+
+		#region Hung Up
+
+		public async Task FinishAutoHangUpAsync(HangUpMode mode)
+		{
+			if (!IsAutoHangUp)
+			{
+				return;
+			}
+
+			if (mode == HangUpMode.KilledNoBlessing || mode == HangUpMode.ChangedMap)
+			{
+				await SendAsync(new MsgHangUp
+				{
+					Action = mode,
+					Experience = AutoHangUpExperience
+				});
+
+				await SendAsync(new MsgHangUp
+				{
+					Action = HangUpMode.End
+				});
+			}
+
+			await AwardExperienceAsync((long)AutoHangUpExperience, true);
+			AutoHangUpExperience = 0;
+
+			IsAutoHangUp = false;
+		}
+
+		#endregion
+
+		#region Cool Action
+
+		public bool IsFullUnique()
+		{
+			for (ItemPosition pos = ItemPosition.EquipmentBegin; pos <= ItemPosition.EquipmentEnd; pos++)
+			{
+				Item item = UserPackage[pos];
+				if (item == null)
+				{
+					switch (pos)
+					{
+						case ItemPosition.Mount:
+						case ItemPosition.Gourd:
+						case ItemPosition.Garment:
+						case ItemPosition.RightHandAccessory:
+						case ItemPosition.LeftHandAccessory:
+						case ItemPosition.MountArmor:
+						case (ItemPosition)13:
+						case (ItemPosition)14:
+							continue;
+						default:
+							return false;
+					}
+				}
+
+				if (!item.IsEquipment())
+				{
+					continue;
+				}
+
+				if (item.GetQuality() % 10 < 7)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
+		#endregion
+
+		#region Change Name
+
+		public int GetChangeNameRemainingAttempts()
+		{
+			uint periodInterval = (uint)(UnixTimestamp.Now - MsgChangeName.CHANGE_NAME_PERIOD);
+			using var ctx = new ServerDbContext();
+			int amount = ctx.ChangeNameBackups
+				.Where(x => x.IdUser == Identity
+							&& !x.OldName.Contains("[Z"))
+				.Count(x => x.ChangeTime >= periodInterval);
+			return Math.Max(0, Math.Min(MsgChangeName.MAX_CHANGES_PERIOD, MsgChangeName.MAX_CHANGES_PERIOD - amount));
+		}
+
+		public async Task BroadcastNewNameAsync()
+		{
+			if (SyndicateMember != null)
+			{
+				SyndicateMember.ChangeName(Name);
+			}
+
+			if (FamilyMember != null)
+			{
+				FamilyMember.ChangeName(Name);
+			}
+		}
+
+		#endregion
+
+		#region Purchases
+
+		public async Task CheckFirstCreditAsync()
+		{
+			if (Flag.HasFlag(PrivilegeFlag.FirstCreditReady))
+			{
+				return;
+			}
+
+			if (PigletClient.Instance?.Actor != null)
+			{
+				await PigletClient.Instance.Actor.SendAsync(new MsgPigletUserCreditInfo(user.AccountIdentity).Encode());
+			}
+		}
+
+		public async Task SetFirstCreditAsync()
+		{
+			if (SashSlots < MAXIMUM_SASH_SLOTS)
+			{
+				await SetSashSlotAmountAsync(MAXIMUM_SASH_SLOTS);
+				await SendAsync(StrVipQkdSashUpgrade, TalkChannel.Talk, Color.White);
+			}
+
+			if (Flag.HasFlag(PrivilegeFlag.FirstCreditReady))
+			{
+				return;
+			}
+
+			Flag |= PrivilegeFlag.FirstCreditReady;
+			await SynchroAttributesAsync(ClientUpdateType.PrivilegeFlag, (ulong)Flag);
+		}
+
+		public async Task ClaimFirstCreditGiftAsync()
+		{
+			if (!Flag.HasFlag(PrivilegeFlag.FirstCreditReady) || Flag.HasFlag(PrivilegeFlag.FirstCreditClaimed))
+			{
+				return;
+			}
+
+			if (!UserPackage.IsPackSpare(9))
+			{
+				await SendAsync(string.Format(StrNotEnoughSpaceN, 9));
+				return;
+			}
+
+			var logger = Logger.CreateConsoleLogger("first_credit");
+			var rewards = await AwardConfigRepository.GetFirstCreditRewardsAsync(ProfessionSort);
+			foreach (var reward in rewards)
+			{
+				if (await UserPackage.AwardItemAsync((uint)reward.Data2, ItemPosition.Inventory, reward.Data3 != 0, reward.Data4 != 0))
+				{
+					logger.Information($"{Identity},{Profession},{Metempsychosis},{reward.Data2},{reward.Data3}");
+				}
+			}
+
+			if (PigletClient.Instance?.Actor != null)
+			{
+				await PigletClient.Instance.Actor.SendAsync(new MsgPigletClaimFirstCredit(Client.AccountIdentity));
+			}
+
+			Flag |= PrivilegeFlag.FirstCreditClaimed | PrivilegeFlag.MapItemDisplay;
+			await SynchroAttributesAsync(ClientUpdateType.PrivilegeFlag, (ulong)Flag);
+			await SaveAsync();
+		}
+
+		#endregion
+
+		#region Mining
+
+		private static readonly ILogger mineLogger = Logger.CreateConsoleLogger("mining");
+		private int mineCount;
+		private int oreCount;
+		private int itemCount;
+
+		public void StartMining()
+		{
+			miningTimer.Startup(3);
+			mineCount = 0;
+			oreCount = 0;
+			itemCount = 0;
+		}
+
+		public void StopMining()
+		{
+			miningTimer.Clear();
+		}
+
+		public async Task DoMineAsync()
+		{
+			if (!IsAlive)
+			{
+				await SendAsync(StrDead);
+				StopMining();
+				return;
+			}
+
+			if (!Map.IsMineField())
+			{
+				await SendAsync(StrNoMine);
+				StopMining();
+				return;
+			}
+
+			if (UserPackage[Item.ItemPosition.RightHand]?.GetItemSubType() != 562)
+			{
+				await SendAsync(StrMineWithPecker);
+				StopMining();
+				return;
+			}
+
+			try
+			{
+				if (UserPackage.IsPackFull())
+				{
+					await SendAsync(StrYourBagIsFull);
+				}
+				else
+				{
+					uint idItem = 0;
+					float nChance = 30f + (float)(WeaponSkill[562]?.Level ?? 0) / 2;
+					if (await ChanceCalcAsync(nChance))
+					{
+						const int euxiniteOre = 1072031;
+						const int ironOre = 1072010;
+						const int copperOre = 1072020;
+						const int silverOre = 1072040;
+						const int goldOre = 1072050;
+						int oreRate = await NextAsync(100);
+						int oreLevel = await NextAsync(10) % 10;
+						switch (Map.ResLev) // TODO gems
+						{
+							case 1:
+								{
+									if (oreRate < 4) // 4% Euxinite
+									{
+										idItem = euxiniteOre;
+									}
+									else if (oreRate < 6) // 6% Gold Ore
+									{
+										idItem = (uint)(goldOre + oreLevel);
+									}
+									else if (oreRate < 50) // 40% Iron Ore
+									{
+										idItem = (uint)(ironOre + oreLevel);
+									}
+
+									break;
+								}
+							case 2:
+								{
+									if (oreRate < 5) // 5% Gold Ore
+									{
+										idItem = (uint)(goldOre + oreLevel);
+									}
+									else if (oreRate < 15) // 10% Copper Ore
+									{
+										idItem = (uint)(copperOre + oreLevel);
+									}
+									else if (oreRate < 50) // 35% Iron Ore
+									{
+										idItem = (uint)(ironOre + oreLevel);
+									}
+
+									break;
+								}
+							case 3:
+								{
+									if (oreRate < 5) // 5% Gold Ore
+									{
+										idItem = (uint)(goldOre + oreLevel);
+									}
+									else if (oreRate < 12) // 7% Silver Ore
+									{
+										idItem = (uint)(silverOre + oreLevel);
+									}
+									else if (oreRate < 25) // 13% Copper Ore
+									{
+										idItem = (uint)(copperOre + oreLevel);
+									}
+									else if (oreRate < 50) // 25% Iron Ore
+									{
+										idItem = (uint)(ironOre + oreLevel);
+									}
+
+									break;
+								}
+						}
+
+						oreCount++;
+					}
+					else
+					{
+						idItem = await MineManager.MineAsync(MapIdentity, this);
+						itemCount++;
+					}
+
+					DbItemtype itemtype = ItemManager.GetItemtype(idItem);
+					if (itemtype == null)
+					{
+						return;
+					}
+
+					if (await UserPackage.AwardItemAsync(idItem))
+					{
+						await SendAsync(string.Format(StrMineItemFound, itemtype.Name));
+						mineLogger.Information($"{Identity},{Name},{idItem},{MapIdentity},{Map?.Name},{X},{Y}");
+					}
+
+					mineCount++;
+				}
+			}
+
+			catch (Exception ex)
+			{
+				logger.Fatal(ex, "Error on mining. {ex}", ex.Message);
+			}
+			finally
+			{
+				await BroadcastRoomMsgAsync(new MsgAction
+				{
+					Identity = Identity,
+					Command = 0,
+					ArgumentX = X,
+					ArgumentY = Y,
+					Action = ActionType.MapMine
+				}, true);
+			}
+		}
+
+		#endregion
+
+		#region Socket
+
+		public override Task SendAsync(IPacket msg)
         {
             return SendAsync(msg.Encode());
         }
@@ -3070,9 +3567,236 @@ namespace Long.Kernel.States.User
             return ServerDbContext.UpdateAsync(user);
         }
 
-        #endregion
+		#endregion
 
-        public enum EmoneyOperationType
+		#region Session
+		public DateTime LastLogin => UnixTimestamp.ToDateTime(user.LoginTime);
+		public DateTime? LastLogout
+		{
+			get => UnixTimestamp.ToNullableDateTime(user.LogoutTime);
+			set => user.LogoutTime = (uint)UnixTimestamp.FromDateTime(value);
+		}
+		public int TotalOnlineTime => user.OnlineSeconds;
+
+		public DateTime? PreviousLoginTime { get; private set; }
+
+		public TimeSpan OnlineTime => TimeSpan.Zero
+											  .Add(new TimeSpan(0, 0, 0, user.OnlineSeconds))
+											  .Add(new TimeSpan(
+													   0, 0, 0,
+													   (int)(DateTime.Now - LastLogin).TotalSeconds));
+
+		public TimeSpan SessionOnlineTime => TimeSpan.Zero
+													 .Add(new TimeSpan(
+															  0, 0, 0,
+															  (int)(DateTime.Now - LastLogin)
+															  .TotalSeconds));
+
+		public async Task SetLoginAsync()
+		{
+			PreviousLoginTime = UnixTimestamp.ToDateTime(user.LoginTime);
+			user.LoginTime = (uint)DateTime.Now.ToUnixTimestamp();
+			await SaveAsync();
+		}
+		
+
+		public async Task OnLoginAsync()
+		{
+			if (user.FirstLogin == 0)
+			{
+				LuaScriptManager.Run(this, null, null, null, "System_PlayLoginFirst()");
+				user.FirstLogin = (uint)UnixTimestamp.Now;
+			}
+
+			DbUser mate = await UserRepository.FindByIdentityAsync(MateIdentity);
+			if (mate != null)
+			{
+				MateName = mate.Name;
+			}
+
+			await NpcServer.SendAsync(new MsgAiPlayerLogin(this));
+
+			await DoDailyResetAsync(true);
+			await GameAction.ExecuteActionAsync(1000000, this, null, null);
+
+			if (user.LoginTime > 0)
+			{
+				PreviousLoginTime = UnixTimestamp.ToDateTime(user.LoginTime);
+			}
+
+			if (ConquerPoints > 0)
+			{
+				uint currentCheckSum = CalculateEmoneyCheckSum(user.ConquerPoints, user.Identity);
+				if (user.ConquerPointsCheckSum != currentCheckSum)
+				{
+					logger.Warning("User {0} {1} has invalid value {2} of emoney. Last registered checksum {3} and current is {4}", Identity, Name, ConquerPoints, user.ConquerPointsCheckSum, currentCheckSum);
+					await SetAttributesAsync(ClientUpdateType.ConquerPoints, 0);
+				}
+			}
+
+			await InitializeActivityTasksAsync();
+			await StageGoal.InitializeAsync();
+
+			if (!IsUnlocked())
+			{
+				await SendAsync(new Msg2ndPsw
+				{
+					Password = 0x1,
+					Action = Msg2ndPsw.PasswordRequestType.CorrectPassword
+				});
+			}
+
+			await LoadTitlesAsync();
+			await SendMerchantAsync();
+			await LoadLeaveWordAsync();
+			await LoadStatusAsync();
+			await SendBlessAsync();
+			LoadExperienceData();
+			await SendMultipleExpAsync();
+			await SendLuckAsync();
+
+			await SynchroAttributesAsync(ClientUpdateType.CurrentSashSlots, SashSlots);
+			await SynchroAttributesAsync(ClientUpdateType.MaximumSashSlots, MAXIMUM_SASH_SLOTS);
+
+			await Screen.SynchroScreenAsync();
+
+#if !DEBUG
+            if (IsGm())
+            {
+                await TransformAsync(3321, int.MaxValue, true);
+            }
+#endif
+
+			await SendAsync(new MsgSignIn
+			{
+				Action = MsgSignIn.MsgSignInType.Display
+			});
+
+			await MailBox.InitializeAsync();
+			await Achievements.InitializeAsync();
+
+			user.LoginTime = (uint)UnixTimestamp.Now;
+			await UserRepository.UpdateAsync(user);
+		}
+
+		public async Task OnLogoutAsync()
+		{
+			try
+			{
+				if (!deleted)
+				{
+					await OnUserLogoutAsync(this);
+				}
+			}
+			catch (Exception ex)
+			{
+				logger.Error(ex, "Error on module logout. {0}", ex.Message);
+			}
+
+			try
+			{
+				if (!deleted)
+				{
+					if (Map?.IsRecordDisable() == false)
+					{
+						if (!IsAlive)
+							await ReallyRevive(true, false);
+
+						user.MapID = idMap;
+						user.X = currentX;
+						user.Y = currentY;
+					}
+				}
+
+				await LeaveMapAsync();
+
+				await NpcServer.SendAsync(new MsgAiPlayerLogout
+				{
+					Data = new MsgAiPlayerLogoutContract
+					{
+						Timestamp = Environment.TickCount,
+						Id = user.Identity
+					}
+				});
+
+				if (!deleted)
+				{
+					user.LogoutTime = (uint)UnixTimestamp.Now;
+					await UserRepository.UpdateAsync(user);
+				}
+			}
+			catch (Exception ex)
+			{
+				logger.Error(ex, "Error on user logout! {0}", ex.Message);
+			}
+			finally
+			{
+				logger.Information("User {1} {0} has disconnected", Name, Identity);
+				WorldProcessor.Instance.Queue(WorldProcessor.NO_MAP_GROUP, () =>
+				{
+					RoleManager.ForceLogoutUser(Identity);
+					return Task.CompletedTask;
+				});
+			}
+		}
+		public async Task OnLoginAfterModulesAsync()
+		{
+			if (!IsUnlocked())
+			{
+				await SendAsync(new Msg2ndPsw
+				{
+					Password = 0x1,
+					Action = Msg2ndPsw.PasswordRequestType.CorrectPassword
+				});
+			}
+
+			await LoadTitlesAsync();
+			await SendMerchantAsync();
+			await LoadLeaveWordAsync();
+			await LoadStatusAsync();
+			await SendBlessAsync();
+			LoadExperienceData();
+			await SendMultipleExpAsync();
+			await SendLuckAsync();
+
+			await SynchroAttributesAsync(ClientUpdateType.CurrentSashSlots, SashSlots);
+			await SynchroAttributesAsync(ClientUpdateType.MaximumSashSlots, MAXIMUM_SASH_SLOTS);
+
+            if (Life == 0)
+				await ReallyRevive(true, false);
+
+			await SignIn.SendAsync();
+			await MailBox.InitializeAsync();
+			await Achievements.InitializeAsync();
+			await TitleStorage.SendAllAsync();
+
+			await LoadUnionAsync();
+
+			await Screen.SynchroScreenAsync();
+		}
+		public async Task DoDailyResetAsync(bool login)
+		{
+			if (login && (!PreviousLoginTime.HasValue || PreviousLoginTime.Value.Date >= DateTime.Now.Date || LastLogout?.Date >= DateTime.Now.Date))
+			{
+				// already reseted
+				return;
+			}
+
+			if (!login)
+			{
+				Statistic.ClearDailyStatistic();
+
+				if (TaskDetail != null)
+				{
+					await TaskDetail.DailyResetAsync();
+				}
+			}
+		}
+
+		#endregion
+
+
+		public enum EmoneyOperationType
         {
             None,
             Npc,

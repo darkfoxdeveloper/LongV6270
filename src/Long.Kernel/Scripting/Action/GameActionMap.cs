@@ -406,7 +406,7 @@ namespace Long.Kernel.Scripting.Action
                     continue;
                 }
 
-                if (!mapItem.Create(map, pos, idItemtype, 0, 0, 0, 0))
+                if (!mapItem.Create(map, pos, idItemtype, 0, 0, 0, 0, MapItem.DropMode.Common))
                 {
                     IdentityManager.MapItem.ReturnIdentity(mapItem.Identity);
                     continue;

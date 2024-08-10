@@ -47,7 +47,13 @@ namespace Long.Kernel.Network.Game.Packets
             PackageAmount = (ushort)item.AccumulateNum;
             ActivationTime = item.SaveTime;
             RemainingTime = item.RemainingSeconds;
-        }
+            PerfectionLevel = item.PerfectionLevel;
+            PerfectionProgress = item.PerfectionProgress;
+            PerfectionOwnerId = item.PerfectionOwnerGuid;
+            PerfectionOwnerName = item.PerfectionOwnerName;
+            PerfectionOwnerSignature = item.PerfectionSignature;
+
+		}
 
         public uint Identity { get; set; }
         public uint Itemtype { get; set; }
@@ -98,8 +104,8 @@ namespace Long.Kernel.Network.Game.Packets
             writer.Write(SocketProgress); // 20
             writer.Write(SocketOne); // 24
             writer.Write(SocketTwo); // 25
-            writer.Write((ushort)0); // 26
-            writer.Write(Effect); // 28
+            writer.Write((ushort)0); // 26 SpellID
+			writer.Write(Effect); // 28
             writer.Write(0); // 29
             writer.Write(Plus); // 33
             writer.Write(Bless); // 34
@@ -121,7 +127,7 @@ namespace Long.Kernel.Network.Game.Packets
             writer.Write(PerfectionProgress); // 76
             writer.Write(PerfectionOwnerId); // 80
             writer.Write(PerfectionOwnerName, 16); // 84
-            writer.Write(PerfectionOwnerSignature, 32); // 100
+			writer.Write(PerfectionOwnerSignature, 32); // 100
             return writer.ToArray();
         }
 

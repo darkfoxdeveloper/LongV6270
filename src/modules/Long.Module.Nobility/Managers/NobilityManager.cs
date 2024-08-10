@@ -171,7 +171,15 @@ namespace Long.Module.Peerage.Managers
             }
         }
 
-        public NobilityRank GetRanking(uint idUser)
+		public async Task ChangeNameAsync(Character user, string newName)
+		{
+			if (nobilityRecords.TryGetValue(user.Identity, out var peerage))
+			{
+				peerage.Name = newName;
+			}
+		}
+
+		public NobilityRank GetRanking(uint idUser)
         {
             int position = GetPosition(idUser);
             if (position >= 0 && position < 3)
@@ -347,7 +355,7 @@ namespace Long.Module.Peerage.Managers
             }
 
             public uint Identity => nobility.UserId;
-            public string Name { get; }
+            public string Name { get; set; }
             public uint Lookface { get; }
             public ulong Donation
             {

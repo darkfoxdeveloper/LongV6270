@@ -220,7 +220,7 @@ namespace Long.Module.Team.States
         {
             if (user == null || !IsMember(user.Identity)) return;
 
-            MsgUserAttrib msg = new(user.Identity, ClientUpdateType.TeamMemberHP, user.Life);
+            MsgUserAttrib msg = new(user.Identity, ClientUpdateType.Hitpoints, user.Life);
             if (maxLife) msg.Append(ClientUpdateType.TeamMemberMaxHP, user.MaxLife);
 
             foreach (Character member in players.Values)

@@ -1,4 +1,5 @@
 ﻿using Long.Database.Entities;
+using Long.Kernel.Database.Repositories;
 using Long.Kernel.Network.Game;
 using Long.Kernel.States.User;
 using Long.Network.Packets;
@@ -10,6 +11,14 @@ namespace Long.Module.TaskDetail.Network
         public List<TaskItemStruct> Tasks = new();
         public TaskStatusMode Mode { get; set; }
         public ushort Amount { get; set; }
+
+        public void QuitQuest(uint idTask)
+        {
+            Mode = TaskStatusMode.Remove;
+            Tasks.Add(new TaskItemStruct() { Identity = (int)idTask, Status = TaskItemStatus.Available, Time = 0 });
+            Amount = (ushort)Tasks.Count();
+            Encode();
+        }
 
         public override void Decode(byte[] bytes)
         {
@@ -86,6 +95,13 @@ namespace Long.Module.TaskDetail.Network
                 {
                     await user.TaskDetail.CreateNewAsync((uint)taskItemStruct.Identity);
                 }
+            } else if (Mode == TaskStatusMode.Remove)
+            {
+                foreach(var task in Tasks)
+                {
+                    await TaskDetailRepository.RemoveAsync(client.Identity, (uint)task.Identity);
+                }
+                await client.SendAsync(this);
             }
         }
 

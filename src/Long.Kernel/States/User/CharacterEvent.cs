@@ -1,8 +1,13 @@
 ﻿using Long.Database.Entities;
+using Long.Kernel.Database.Repositories;
 using Long.Kernel.Managers;
+using Long.Kernel.Modules.Systems.Qualifier;
 using Long.Kernel.Modules.Systems.TaskDetail;
 using Long.Kernel.Network.Game.Packets;
+using Long.Kernel.States.Events;
 using Long.Kernel.States.MessageBoxes;
+using System.Collections.Concurrent;
+using static Long.Kernel.Managers.ActivityManager;
 
 namespace Long.Kernel.States.User
 {
@@ -19,9 +24,9 @@ namespace Long.Kernel.States.User
             });
         }
 
-        #region Game Action
+		#region Game Action
 
-        public long Iterator { get; set; } = -1;
+		public long Iterator { get; set; } = -1;
         public long[] VarData { get; } = new long[MAX_VAR_AMOUNT];
         public string[] VarString { get; } = new string[MAX_VAR_AMOUNT];
 
@@ -188,11 +193,11 @@ namespace Long.Kernel.States.User
             set => user.QuizPoints = value;
         }
 
-        #endregion
+		#endregion
 
-        #region Activity
+		#region Activity
 
-        private readonly TimeOut activityLoginHalfHourTimer = new();
+		private readonly TimeOut activityLoginHalfHourTimer = new();
 
         public int ActivityPoints
         {
@@ -266,11 +271,124 @@ namespace Long.Kernel.States.User
             });
         }
 
-        #endregion
+		#endregion
 
-        #region Process Goals
+		#region Activity Tasks
 
-        public ProcessGoal StageGoal { get; }
+		public ConcurrentDictionary<uint, ActivityTask> ActivityTasks = new();
+
+		public async Task<bool> CheckForActivityTaskUpdatesAsync()
+		{
+			bool result = false;
+			foreach (var availableTask in GetDisponibleTaskByUser(this))
+			{
+				if (ActivityTasks.Values.All(x => (byte)x.Type != availableTask.Type))
+				{
+					var dbTask = ActivityRepository.GetUserTasks(Identity).FirstOrDefault(x => x.ActivityId == availableTask.Id);
+					dbTask ??= new DbActivityUserTask
+					{
+						ActivityId = availableTask.Id,
+						UserId = Identity
+					};
+					var task = new ActivityTask(dbTask);
+					ActivityTasks.TryAdd(availableTask.Id, task);
+					await task.SaveAsync();
+					result = true;
+				}
+			}
+			return result;
+		}
+
+		public async Task UpdateTaskActivityAsync(ActivityType activityType)
+		{
+			ActivityTask activityTask = null;
+			foreach (var activity in ActivityTasks.Values)
+			{
+				var act = GetTaskTypeById(activity.ActivityId);
+				if (act == activityType)
+				{
+					activityTask = activity;
+					break;
+				}
+			}
+
+			if (activityTask == null)
+			{
+				return;
+			}
+
+			if (activityTask.CompleteFlag != 0)
+			{
+				return;
+			}
+
+			byte newAmount = (byte)(activityTask.Schedule + 1);
+			var task = GetTaskById(activityTask.ActivityId);
+			if (newAmount > task.MaxNum)
+			{
+				return;
+			}
+
+			activityTask.Schedule = newAmount;
+			if (activityTask.Schedule >= task.MaxNum)
+			{
+				activityTask.CompleteFlag = 1;
+			}
+
+			await activityTask.SaveAsync();
+
+			await SendAsync(new MsgActivityTask
+			{
+				Mode = MsgActivityTask.Action.UpdateActivityTask,
+				Activities = new List<MsgActivityTask.Activity>
+				{
+					new MsgActivityTask.Activity
+					{
+						Id = activityTask.ActivityId,
+						Completed = activityTask.CompleteFlag,
+						Progress = activityTask.Schedule
+					}
+				}
+			});
+
+			await SubmitActivityPointsAsync();
+		}
+
+		public Task SubmitActivityPointsAsync()
+		{
+			return SendAsync(new MsgStatisticDaily
+			{
+				Data = new List<MsgStatisticDaily.DailyData>
+				{
+					new MsgStatisticDaily.DailyData()
+					{
+						EventId = MsgStatisticDaily.EventType.ActivityTaskData,
+						DataType = MsgStatisticDaily.DataMode.TodayActiveValue,
+						ActivityPoints = ActivityPoints
+					}
+				}
+			});
+		}
+
+		public async Task ActivityTasksDailyResetAsync()
+		{
+			ActivityTasks.Clear();
+			await CheckForActivityTaskUpdatesAsync();
+			activityLoginHalfHourTimer.Update();
+			await UpdateTaskActivityAsync(ActivityType.LoginTheGame);
+			if (VipLevel > 0)
+			{
+				await UpdateTaskActivityAsync(ActivityType.VipActiveness);
+			}
+			await SubmitActivityListAsync();
+			await SubmitActivityPointsAsync();
+		}
+
+		#endregion
+
+		#region Process Goals
+
+		public ProcessGoal StageGoal { get; }
 
         #endregion
 
@@ -278,6 +396,108 @@ namespace Long.Kernel.States.User
 
         public DailySignIn SignIn { get; init; }
 
-        #endregion
-    }
+		#endregion
+
+		#region Event
+
+		public ConcurrentDictionary<GameEvent.EventType, GameEvent> GameEvents { get; init; } = new();
+
+		public T GetEvent<T>() where T : GameEvent
+		{
+			return GameEvents.Values.FirstOrDefault(x => x.GetType().Equals(typeof(T))) as T;
+		}
+
+		public GameEvent GetCurrentEvent()
+		{
+			return GameEvents.Values.FirstOrDefault(x => x.IsInEventMap(MapIdentity));
+		}
+
+		public async Task<bool> SignInEventAsync(GameEvent e)
+		{
+			if (!e.IsAllowedToJoin(this) || !GameEvents.TryAdd(e.Identity, e))
+			{
+				return false;
+			}
+
+			await e.OnEnterAsync(this);
+			return true;
+		}
+
+		public async Task<bool> SignOutEventAsync(GameEvent e)
+		{
+			if (GameEvents.TryRemove(e.Identity, out _))
+			{
+				await e.OnExitAsync(this);
+			}
+			return true;
+		}
+
+		public bool IsInQualifierEvent()
+		{
+			return GameEvents.Any(x => GameEvent.IsQualifierEvent(x.Key));
+		}
+
+		#endregion
+
+		#region Arena Qualifier
+
+		public ArenaStatus QualifierStatus { get; set; } = ArenaStatus.NotSignedUp;
+
+		public uint QualifierPoints
+		{
+			get => user.AthletePoint;
+			set => user.AthletePoint = value;
+		}
+
+		public uint QualifierDayWins
+		{
+			get => user.AthleteDayWins;
+			set => user.AthleteDayWins = value;
+		}
+
+		public uint QualifierDayLoses
+		{
+			get => user.AthleteDayLoses;
+			set => user.AthleteDayLoses = value;
+		}
+
+		public uint QualifierDayGames => QualifierDayWins + QualifierDayLoses;
+
+		public uint QualifierHistoryWins
+		{
+			get => user.AthleteHistoryWins;
+			set => user.AthleteHistoryWins = value;
+		}
+
+		public uint QualifierHistoryLoses
+		{
+			get => user.AthleteHistoryLoses;
+			set => user.AthleteHistoryLoses = value;
+		}
+
+		public uint HonorPoints
+		{
+			get => user.AthleteCurrentHonorPoints;
+			set => user.AthleteCurrentHonorPoints = value;
+		}
+
+		public uint HistoryHonorPoints
+		{
+			get => user.AthleteHistoryHonorPoints;
+			set => user.AthleteHistoryHonorPoints = value;
+		}
+
+		public bool IsArenicWitness()
+		{
+			var arenicEvents = EventManager.QueryWitnessEvents();
+			foreach (var witnessEvent in arenicEvents)
+			{
+				if (witnessEvent.IsWitness(this))
+					return true;
+			}
+			return false;
+		}
+
+		#endregion
+	}
 }

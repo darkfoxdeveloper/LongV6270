@@ -469,17 +469,23 @@ namespace Long.Kernel.States.Magics
             return true;
         }
 
-        #endregion
+		#endregion
 
-        #region Query Magic
+		#region Query Magic
 
-        public Magic QueryMagic => magics.TryGetValue(useMagicType, out Magic magic) ? magic : null;
+		#region Query Magic
 
-        #endregion
+		public Magic QueryMagic => magics.TryGetValue(useMagicType, out Magic magic) ? magic : null;
 
-        #region OS
+		public Magic this[ushort nType] => magics.TryGetValue(nType, out Magic ret) ? ret : null;
 
-        public void AddOSMagic(CrossMagicInfoPB info)
+		#endregion
+
+		#endregion
+
+		#region OS
+
+		public void AddOSMagic(CrossMagicInfoPB info)
         {
             var magic = new Magic(role);
             if (!magic.Create(new DbMagic
@@ -520,6 +526,16 @@ namespace Long.Kernel.States.Magics
             }, serverId);
         }
 
-        #endregion
-    }
+		#endregion
+
+		[Flags]
+		public enum AutoActive
+		{
+			None = 0,
+			Kill = 0x1,
+			OnAttack = 0x4,
+			OnBeAttack = 0x8,
+			AfterSkill = 0x40
+		}
+	}
 }

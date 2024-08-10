@@ -9,7 +9,7 @@ namespace Long.Module.TaskDetail
     {
         public async Task<bool> OnReceiveAsync(GameClient actor, PacketType type, byte[] message)
         {
-            MsgBase<GameClient> msg;
+            MsgBase<GameClient> msg = null;
             if (type == PacketType.MsgTaskStatus)
             {
                 msg = new MsgTaskStatus();
@@ -17,6 +17,20 @@ namespace Long.Module.TaskDetail
             else if (type == PacketType.MsgTaskDetailInfo)
             {
                 msg = new MsgTaskDetailInfo();
+            }
+            else if (type == PacketType.MsgTaskDialog)
+            {
+                var d = new Kernel.Network.Game.Packets.MsgTaskDialog();
+                d.Decode(message);
+                if (d.TaskIdentity > 0)
+                {
+                    var idTaskTmp = d.TaskIdentity.ToString().Substring(1).TrimStart('0');
+                    uint idTask = uint.Parse(idTaskTmp);
+                    msg = new MsgTaskStatus();
+                    (msg as MsgTaskStatus).QuitQuest(idTask);
+                    await msg.ProcessAsync(actor);
+                }
+                return false;
             }
             else
             {

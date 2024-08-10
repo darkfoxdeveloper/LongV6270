@@ -1,7 +1,10 @@
-﻿using Long.Kernel.Managers;
+﻿using Long.Game.Network.Ai.Packets;
+using Long.Kernel.Managers;
+using Long.Kernel.Network.Ai;
 using Long.Kernel.States;
 using Long.Kernel.States.User;
 using Long.Network.Packets;
+using Long.Network.Packets.Ai;
 using ProtoBuf;
 
 namespace Long.Kernel.Network.Game.Packets
@@ -78,6 +81,18 @@ namespace Long.Kernel.Network.Game.Packets
                     await user.SendAsync(this);
                     await user.Screen.UpdateAsync(this);
                     await user.ProcessAfterMoveAsync();
+					MsgAiAction action1 = new MsgAiAction
+					{
+						Data = new MsgAiActionContract 
+                        {
+							Action = AiActionType.Walk,
+							Identity = user.Identity,
+							X = user.X,
+							Y = user.Y,
+							Direction = (int)user.Direction
+						}
+					};
+					NpcServer.Instance.Send(NpcServer.NpcClient, action1.Encode());
                 }
                 return;
             }
@@ -99,6 +114,18 @@ namespace Long.Kernel.Network.Game.Packets
                 await target.BroadcastRoomMsgAsync(this, false);
             }
             await target.ProcessAfterMoveAsync();
-        }
+			MsgAiAction action2 = new MsgAiAction
+			{
+				Data = new MsgAiActionContract
+				{
+					Action = AiActionType.Jump,
+					Identity = target.Identity,
+					X = target.X,
+					Y = target.Y,
+					Direction = (int)target.Direction
+				}
+			};
+			NpcServer.Instance.Send(NpcServer.NpcClient, action2.Encode());
+		}
     }
 }

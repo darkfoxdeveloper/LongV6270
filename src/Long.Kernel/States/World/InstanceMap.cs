@@ -1,5 +1,7 @@
 ﻿using Long.Database.Entities;
+using Long.Game.Network.Ai.Packets;
 using Long.Kernel.Managers;
+using Long.Kernel.Network.Ai;
 using Long.Shared.Managers;
 
 namespace Long.Kernel.States.World
@@ -64,12 +66,12 @@ namespace Long.Kernel.States.World
             }
         }
 
-        //public override Task SendAddToNpcServerAsync()
-        //{
-        //    return BroadcastNpcMsgAsync(new MsgAiDynaMap(dynaMapEntity, instanceType.Id, instanceType.MapId));
-        //}
+		public override Task SendAddToNpcServerAsync()
+		{
+			return NpcServer.SendAsync(new MsgAiDynaMap(dynaMapEntity, instanceType.Id, instanceType.MapId));
+		}
 
-        public new Task<bool> SaveAsync()
+		public new Task<bool> SaveAsync()
         {
             return Task.FromResult(true);
         }

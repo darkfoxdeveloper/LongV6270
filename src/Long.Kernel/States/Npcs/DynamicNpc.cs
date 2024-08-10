@@ -27,14 +27,12 @@ namespace Long.Kernel.States.Npcs
 
             if (IsSynFlag() && OwnerIdentity > 0)
             {
-                if (SyndicateManager != null)
-                {
-                    ISyndicate syn = SyndicateManager.GetSyndicate((int)OwnerIdentity);
-                    if (syn != null)
-                    {
-                        Name = syn.Name;
-                    }
-                }
+
+				//ISyndicate syn = SyndicateManager.GetSyndicate((int)OwnerIdentity);
+    //            if (syn != null)
+    //            {
+    //                Name = syn.Name;
+    //            }
             }
         }
 
@@ -118,7 +116,7 @@ namespace Long.Kernel.States.Npcs
 
         public override async Task DelNpcAsync()
         {
-            await SetAttributesAsync(ClientUpdateType.TeamMemberHP, 0);
+            await SetAttributesAsync(ClientUpdateType.Hitpoints, 0);
             deathTimer.Startup(5);
 
             if (IsSynFlag() || IsCtfFlag())
@@ -251,8 +249,21 @@ namespace Long.Kernel.States.Npcs
 
             scores[id].Points += score;
         }
+		public void AddSynWarScore(ISyndicate syn, long score)
+		{
+			if (syn == null)
+			{
+				return;
+			}
 
-        public Score GetTopScore()
+			if (!scores.ContainsKey(syn.Identity))
+			{
+				scores.TryAdd(syn.Identity, new Score(syn.Identity, syn.Name));
+			}
+
+			scores[syn.Identity].Points += score;
+		}
+		public Score GetTopScore()
         {
             return scores.Values.OrderByDescending(x => x.Points).ThenBy(x => x.Identity).FirstOrDefault();
         }

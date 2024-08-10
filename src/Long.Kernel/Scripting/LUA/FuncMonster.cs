@@ -1,11 +1,14 @@
 ﻿using Canyon.Game.Scripting.Attributes;
 using Long.Database.Entities;
 using Long.Kernel.Managers;
+using Long.Kernel.Network.Ai;
 using Long.Kernel.Network.Game.Packets;
 using Long.Kernel.States;
 using Long.Kernel.States.Items;
 using Long.Kernel.States.User;
 using Long.Kernel.States.World;
+using Long.Network.Packets.Ai;
+using System.Xml.Linq;
 using static Long.Kernel.Scripting.LUA.LuaScriptConst;
 
 namespace Long.Kernel.Scripting.LUA
@@ -123,7 +126,7 @@ namespace Long.Kernel.Scripting.LUA
             {
                 ServerStatisticManager.DropGem((Item.SocketGem)(itemType % 1000));
             }
-            //monster.DropItemAsync(itemType, user).GetAwaiter().GetResult();
+            monster.DropItemAsync(itemType, user, MapItem.DropMode.Common).GetAwaiter().GetResult();
             return true;
         }
 
@@ -133,7 +136,7 @@ namespace Long.Kernel.Scripting.LUA
             Character user = GetUser(userId);
             Monster monster = role as Monster;
             uint idUser = user?.Identity ?? 0u;
-            //monster.DropMoneyAsync(money, idUser).GetAwaiter().GetResult();
+            monster.DropMoneyAsync(money, idUser).GetAwaiter().GetResult();
             return true;
         }
 
@@ -156,18 +159,18 @@ namespace Long.Kernel.Scripting.LUA
                 return false;
             }
 
-            //List<Character> targets = user.Team?.Members.ToList() ?? new List<Character> { user };
-            //foreach (var member in targets)
-            //{
-            //    if (member.Identity != user.Identity)
-            //    {
-            //        if (member.MapIdentity != user.MapIdentity || user.GetDistance(member) > Screen.VIEW_SIZE * 2)
-            //        {
-            //            continue;
-            //        }
-            //    }
-            //    member.AwardCultivationAsync(cultivation).GetAwaiter().GetResult();
-            //}
+            List<Character> targets = user.Team?.Members.ToList() ?? new List<Character> { user };
+            foreach (var member in targets)
+            {
+                if (member.Identity != user.Identity)
+                {
+                    if (member.MapIdentity != user.MapIdentity || user.GetDistance(member) > Screen.VIEW_SIZE * 2)
+                    {
+                        continue;
+                    }
+                }
+                member.AwardCultivationAsync(cultivation).GetAwaiter().GetResult();
+            }
             return true;
         }
 
@@ -187,23 +190,22 @@ namespace Long.Kernel.Scripting.LUA
                 logger.Warning($"CreateMonster invalid map[{idMap}]");
                 return false;
             }
-
-            //var msg = new MsgAiSpawnNpc
-            //{
-            //    Mode = AiSpawnNpcMode.Spawn
-            //};
-            //msg.List.Add(new MsgAiSpawnNpc<AiClient>.SpawnNpc
-            //{
-            //    GeneratorId = idGenerator,
-            //    MapId = idMap,
-            //    MonsterType = idType,
-            //    OwnerId = idOwner,
-            //    X = (ushort)x,
-            //    Y = (ushort)y,
-            //    OwnerType = (uint)ownerType,
-            //    Data = (uint)data
-            //});
-            //BroadcastNpcMsgAsync(msg).GetAwaiter().GetResult();
+			var msg = new Long.Game.Network.Ai.Packets.MsgAiSpawnNpc
+			{
+				Mode = AiSpawnNpcMode.Spawn
+			};
+			msg.List.Add(new MsgAiSpawnNpc<AiClient>.SpawnNpc
+			{
+				GeneratorId = idGenerator,
+				MapId = idMap,
+				MonsterType = idType,
+				OwnerId = idOwner,
+				X = (ushort)x,
+				Y = (ushort)y,
+				OwnerType = (uint)ownerType,
+				Data = (uint)data
+			});
+			NpcServer.Instance.Send(NpcServer.NpcClient, msg.Encode());			
             return true;
         }
 

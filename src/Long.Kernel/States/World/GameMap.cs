@@ -1,7 +1,9 @@
 ﻿using Long.Database.Entities;
+using Long.Game.Network.Ai.Packets;
 using Long.Kernel.Database;
 using Long.Kernel.Database.Repositories;
 using Long.Kernel.Managers;
+using Long.Kernel.Network.Ai;
 using Long.Kernel.Network.Game.Packets;
 using Long.Kernel.Processors;
 using Long.Kernel.States.Items;
@@ -732,9 +734,27 @@ namespace Long.Kernel.States.World
             return await ServerDbContext.DeleteAsync(dynaMapEntity);
         }
 
-        #endregion
+		#endregion
 
-        public override string ToString()
+		#region Socket
+
+		public virtual Task SendAddToNpcServerAsync()
+		{
+			if (dynaMapEntity != null)
+				return NpcServer.SendAsync(new MsgAiDynaMap(dynaMapEntity));
+			return Task.CompletedTask;
+		}
+
+		public Task SendRemoveToNpcServerAsync()
+		{
+			if (dynaMapEntity != null)
+				return NpcServer.SendAsync(new MsgAiDynaMap(Identity));
+			return Task.CompletedTask;
+		}
+
+		#endregion
+
+		public override string ToString()
         {
             return $"{Identity} - {Name}";
         }

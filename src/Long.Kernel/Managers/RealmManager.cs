@@ -154,7 +154,11 @@ namespace Long.Kernel.Managers
             }
 
 #if DEBUG
-            crossPlayerQueueDict.TryRemove(user.Identity, out _);
+			//crossPlayerQueueDict.TryRemove(user.Identity, out _);
+			if (crossPlayerQueueDict.TryGetValue(user.Identity, out _)) // player already in queue
+			{
+				return false;
+			}
 #else
             if (crossPlayerQueueDict.TryGetValue(user.Identity, out _)) // player already in queue
             {
@@ -162,8 +166,8 @@ namespace Long.Kernel.Managers
             }
 #endif
 
-            //3999900000
-            CrossPlayerSubmitQueue queue = new()
+			//3999900000
+			CrossPlayerSubmitQueue queue = new()
             {
                 SessionId = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8)),
                 User = user,
@@ -470,7 +474,7 @@ namespace Long.Kernel.Managers
 
                     await user.SetPkModeAsync(PkModeType.CrossServer);
                     await user.SetAttributesAsync(ClientUpdateType.Stamina, 70);
-                    await user.SetAttributesAsync(ClientUpdateType.TeamMemberHP, user.MaxLife);
+                    await user.SetAttributesAsync(ClientUpdateType.Hitpoints, user.MaxLife);
                     await user.SetAttributesAsync(ClientUpdateType.Mana, user.MaxMana);
                     await user.Screen.SynchroScreenAsync();
                 });

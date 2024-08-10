@@ -16,7 +16,7 @@ namespace Long.Network.Packets.Login
         public struct LoginRequestUserIdPB
         {
             [ProtoMember(1)]
-            public int AccountID { get; set; }
+            public long AccountID { get; set; }
             [ProtoMember(2)]
             public string RequestID { get; set; }
             [ProtoMember(3)]

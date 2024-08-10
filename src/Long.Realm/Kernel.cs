@@ -53,15 +53,13 @@ namespace Long.Realm
 
                 BasicThread.SetStartTime();
 
-                userThread = new UserThread();
-                await userThread.StartAsync();
-
                 schedulerFactory = new SchedulerFactory();
                 await schedulerFactory.StartAsync();
                 await schedulerFactory.ScheduleAsync<BasicThread>("* * * * * ?");
                 await schedulerFactory.ScheduleAsync<EventThread>("* * * * * ?");
+				await schedulerFactory.ScheduleAsync<UserThread>("* * * * * ?");
 
-                RealmSocket = new CrossServerListener();
+				RealmSocket = new CrossServerListener();
                 _ = RealmSocket.StartAsync(serverSettings.Game.Port, serverSettings.Game.IPAddress);
 
                 return true;
@@ -76,7 +74,6 @@ namespace Long.Realm
         public static async Task CloseAsync()
         {
             await cancellationTokenSource.CancelAsync();
-            await userThread.StopAsync();
             for (int i = 5; i >= 0; i--)
             {
                 logger.Information("Closing in {0} seconds...", i);
