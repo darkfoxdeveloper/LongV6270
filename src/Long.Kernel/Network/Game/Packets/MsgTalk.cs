@@ -465,6 +465,8 @@ namespace Long.Kernel.Network.Game.Packets
                 switch (command)
                 {
                     case "uplev":
+                    case "uplevel":
+                    case "level":
                         {
                             if (byte.TryParse(arg, out byte level))
                             {
@@ -474,7 +476,7 @@ namespace Long.Kernel.Network.Game.Packets
                             return true;
                         }
 
-                    case "pro":
+                    case "class":
                         {
                             if (byte.TryParse(arg, out byte proProf))
                             {
