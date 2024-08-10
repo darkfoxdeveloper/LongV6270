@@ -15,6 +15,42 @@ When the live server leaves the Beta Stage, we will start keeping stable version
 | [__development__](https://gitlab.com/world-conquer-online/canyon/long/-/tree/develop) | [![pipeline status](https://gitlab.com/world-conquer-online/canyon/long/badges/develop/pipeline.svg)](https://gitlab.com/world-conquer-online/canyon/long/-/commits/development) | [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=world-conquer-online_long&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=world-conquer-online_long) | Targets the official 6270 client. |
 | [__main__](https://gitlab.com/world-conquer-online/canyon/long/-/tree/main) | [![pipeline status](https://gitlab.com/world-conquer-online/canyon/long/badges/main/pipeline.svg)](https://gitlab.com/world-conquer-online/canyon/long/-/commits/main) | Not published | Targets the official 6270 client. |
 
+## Guide for easy setup
+1- Copy folder map/map and map/Scenes from client to Bin folder of Solution
+
+2- Copy lua folder from solution root
+
+3- Build all solution (not only gameserver and accountserver)
+
+4- In table account_cq.realm of the database mysql change the ip and user, password etc
+
+5- Change database configuration in bin folder (json files like Config.Game.json and Config.Login.json)
+
+## Client download
+Download preconfigurated client from here:
+[__client__](https://mega.nz/file/xExUFQ5K#UzSTpyfbCazeQtxF8vpfv__E0kvAVLC-hq5_Isu6BXA)
+
+## TODO
+- PK Explorer System
+- Prestige System
+- Hero System
+- Daily Quests (Incomplete)
+- Daily Signin (Tab in Reward) (Incomplete)
+- Activeness (Tab in Reward)
+- Events (Tab in Reward) (Incomplete)
+- Poker
+- Bulletin (I think are not implemented but need see if have some parts coded)
+- Perfection
+- Chat (Ghost channel for example not implemented)
+- Some npcs missing (like some npcs for quest of tower and fan)
+- Some npcs are showing errors of lua (Example: PirateLord in TwinCity on the Armorer NPC)
+- Arenas (I think only work the Qualifier Standard)
+- House Furnitures (Incomplete)
+- Titles (Not from Wardrobe, that are fine)
+- Lottery (Not working 100% fine)
+- Mentor (Not 100% implemented)
+- Some portals are wrong (Like portal of phoenix city to twin city)
+
 ## Getting Started
 
 Before setting up the project, download and install the following:
