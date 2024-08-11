@@ -8,7 +8,7 @@ namespace Long.Login.Network.Game.Packets
 
         public override async Task ProcessAsync(GameClient client)
         {
-            if (client.Realm.RealmId != Data.ServerID)
+            if (client.Realm != null && client.Realm.RealmId != Data.ServerID)
             {
                 logger.Warning("Server {0} {1} submit invalid server ID {2}", client.Realm.RealmId, client.Realm.Name, Data.ServerID);
                 client.Disconnect();

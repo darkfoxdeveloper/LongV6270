@@ -11,7 +11,7 @@ namespace Long.Login.Network.Game.Packets
         public override async Task ProcessAsync(GameClient client)
         {
             // TODO check if user is banned?
-            var account = AccountRepository.GetByID(Data.AccountID);
+            var account = AccountRepository.GetByID((int)Data.AccountID);
             if (account == null)
             {
                 logger.Warning("Could not find account ID {0} to create new account on Realm {1}", Data.AccountID, client.Realm.Name);
@@ -21,7 +21,7 @@ namespace Long.Login.Network.Game.Packets
 
             RealmUser realmUser = new RealmUser
             {
-                AccountId = Data.AccountID,
+                AccountId = (int)Data.AccountID,
                 RealmId = client.Realm.RealmId,
                 CreationDate = DateTime.Now,
             };

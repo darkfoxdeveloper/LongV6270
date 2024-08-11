@@ -9,7 +9,7 @@ namespace Long.Login.Database.Entities
         [Key]
         public virtual uint PlayerId { get; protected set; }
         public virtual int RealmId { get; set; }
-        public virtual long AccountId { get; set; }
+        public virtual int AccountId { get; set; }
         public virtual DateTime CreationDate { get; set; }
     }
 }

@@ -50,13 +50,13 @@ namespace Long.Login.Network.Game.Packets
             }
 
 #if DEBUG
-            if (!realmData.GameIPAddress.StartsWith("192.168.")
-                && !realmData.GameIPAddress.StartsWith("127."))
-            {
-                logger.Warning("Realm {0} is not local.", realmID);
-                await RejectConnectionAsync(client, MsgLoginRealmAuthEx<GameClient>.ResponseCode.InvalidAddress);
-                return;
-            }
+            //if (!realmData.GameIPAddress.StartsWith("192.168.")
+            //    && !realmData.GameIPAddress.StartsWith("127."))
+            //{
+            //    logger.Warning("Realm {0} is not local.", realmID);
+            //    await RejectConnectionAsync(client, MsgLoginRealmAuthEx<GameClient>.ResponseCode.InvalidAddress);
+            //    return;
+            //}
 #else
             if (!realmData.GameIPAddress.Equals(client.IpAddress))
             {

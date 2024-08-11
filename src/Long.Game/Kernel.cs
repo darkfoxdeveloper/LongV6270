@@ -25,7 +25,7 @@ namespace Long.Game
         private static CrossServerListener crossServerListener { get; set; }
         private static NpcServer npcServer { get; set; }
 
-        public static async Task<bool> InitializeAsync(GameServerSettings serverSettings)
+		public static async Task<bool> InitializeAsync(GameServerSettings serverSettings)
         {
             try
             {
@@ -40,22 +40,22 @@ namespace Long.Game
                 await SupermanManager.InitializeAsync();
                 await DynamicGlobalDataManager.InitializeAsync();
                 await ScriptManager.InitializeAsync();
-                await EventManager.InitializeAsync().ConfigureAwait(true);
-                ModuleManager.Initialize();
-                await ModuleManager.OnServerInitializeModulesAsync();
-                await NpcManager.InitializeAsync();
+				await EventManager.InitializeAsync().ConfigureAwait(true);
+				ModuleManager.Initialize();
+				await ModuleManager.OnServerInitializeModulesAsync();
+				await NpcManager.InitializeAsync();
                 await LotteryManager.InitializeAsync();
                 await AchievementManager.InitializeAsync();
                 await ActivityManager.InitializeAsync();
                 await ProcessGoalManager.InitializeAsync();
                 await SlotMachineManager.InitializeAsync();
                 await DailySignIn.StaticInitializeAsync();
-                await BattleSystemManager.InitializeAsync().ConfigureAwait(true);
-                await CoatStorageManager.InitializeAsync();
+				await BattleSystemManager.InitializeAsync().ConfigureAwait(true);
+				await CoatStorageManager.InitializeAsync();
                 await TitleStorageManager.InitializeAsync();
-                await MineManager.InitializeAsync().ConfigureAwait(true);
+				await MineManager.InitializeAsync().ConfigureAwait(true);
 
-                await RealmManager.InitializeAsync();
+				await RealmManager.InitializeAsync();
                 await KingdomManager.InitializeAsync();
 
                 await ServerStatisticManager.InitializeAsync();
@@ -66,22 +66,22 @@ namespace Long.Game
                 crossServerListener = new CrossServerListener();
                 _ = crossServerListener.StartAsync(serverSettings.Cross.ListenPort, serverSettings.Cross.IPAddress);
 
-                npcServer = new NpcServer();
-                _ = npcServer.StartAsync(serverSettings.Ai.Port, serverSettings.Ai.IPAddress);
+				npcServer = new NpcServer();
+				_ = npcServer.StartAsync(serverSettings.Ai.Port, serverSettings.Ai.IPAddress);
 
-                LuaScriptManager.Run("Event_Server_Start()");
+				LuaScriptManager.Run("Event_Server_Start()");
 
                 BasicThread.SetStartTime();
 
-                schedulerFactory = new SchedulerFactory();
+				schedulerFactory = new SchedulerFactory();
                 await schedulerFactory.StartAsync();
                 await schedulerFactory.ScheduleAsync<BasicThread>("* * * * * ?");
                 await schedulerFactory.ScheduleAsync<EventThread>("* * * * * ?");
                 await schedulerFactory.ScheduleAsync<RealmThread>("* * * * * ?");
-                await schedulerFactory.ScheduleAsync<UserThread>("* * * * * ?");
-                await schedulerFactory.ScheduleAsync<RoleThread>("* * * * * ?");
+				await schedulerFactory.ScheduleAsync<UserThread>("* * * * * ?");
+				await schedulerFactory.ScheduleAsync<RoleThread>("* * * * * ?");
 
-                return true;
+				return true;
             }
             catch (Exception ex)
             {
@@ -101,16 +101,16 @@ namespace Long.Game
             await schedulerFactory.StopAsync();
         }
 
-        public static void SetMaintenance()
-        {
-            try
-            {
-                npcServer.Close();
-            }
-            catch (Exception ex)
-            {
-                logger.Warning(ex, "Error when closing NPC Server socket!!! {}", ex.Message);
-            }
-        }
-    }
+		public static void SetMaintenance()
+		{
+			try
+			{
+				npcServer.Close();
+			}
+			catch (Exception ex)
+			{
+				logger.Warning(ex, "Error when closing NPC Server socket!!! {}", ex.Message);
+			}
+		}
+	}
 }

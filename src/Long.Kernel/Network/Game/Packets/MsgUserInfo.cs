@@ -153,6 +153,7 @@ namespace Long.Kernel.Network.Game.Packets
                 SpouseName
             });
             return writer.ToArray();
+
         }
     }
 }

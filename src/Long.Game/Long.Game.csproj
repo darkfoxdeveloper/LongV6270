@@ -9,6 +9,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="Config.Game1.json" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 	</ItemGroup>
 	
@@ -18,9 +22,6 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <None Update="Config.Game1.json">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
 	  <None Update="Config.Game.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>

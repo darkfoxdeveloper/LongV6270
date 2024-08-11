@@ -2,290 +2,284 @@
 
 namespace Long.Shared
 {
-    public sealed class TimeOut
-    {
-        private int interval;
-        private long updateTime;
+	public sealed class TimeOut
+	{
+		private int interval;
+		private long updateTime;
 
-        public TimeOut()
-        {
-        }
+		public TimeOut(int nInterval = 0)
+		{
+			interval = nInterval;
+			updateTime = 0;
+		}
 
-        public TimeOut(int nInterval)
-        {
-            Startup(nInterval);
-        }
+		public long Clock()
+		{
+			return Environment.TickCount / 1000;
+		}
 
-        public long Clock()
-        {
-            return Environment.TickCount / 1000;
-        }
+		public bool Update()
+		{
+			updateTime = Clock();
+			return true;
+		}
 
-        public bool Update()
-        {
-            updateTime = Clock();
-            return true;
-        }
+		public bool IsTimeOut()
+		{
+			return Clock() >= updateTime + interval;
+		}
 
-        public bool IsTimeOut()
-        {
-            return Clock() >= updateTime + interval;
-        }
+		public bool ToNextTime()
+		{
+			if (IsTimeOut())
+			{
+				return Update();
+			}
 
-        public bool ToNextTime()
-        {
-            if (IsTimeOut())
-            {
-                return Update();
-            }
+			return false;
+		}
 
-            return false;
-        }
+		public void SetInterval(int nSecs)
+		{
+			interval = nSecs;
+		}
 
-        public void SetInterval(int nSecs)
-        {
-            interval = nSecs;
-        }
+		public void Startup(int nSecs)
+		{
+			interval = nSecs;
+			Update();
+		}
 
-        public void Startup(int nSecs)
-        {
-            interval = nSecs;
-            Update();
-        }
+		public bool TimeOver()
+		{
+			if (IsActive() && IsTimeOut())
+			{
+				return Clear();
+			}
 
-        public bool TimeOver()
-        {
-            if (IsActive() && IsTimeOut())
-            {
-                return Clear();
-            }
+			return false;
+		}
 
-            return false;
-        }
+		public bool IsActive()
+		{
+			return updateTime != 0;
+		}
 
-        public bool IsActive()
-        {
-            return updateTime != 0;
-        }
+		public bool Clear()
+		{
+			updateTime = interval = 0;
+			return true;
+		}
 
-        public bool Clear()
-        {
-            updateTime = interval = 0;
-            return true;
-        }
+		public void IncInterval(int nSecs, int nLimit)
+		{
+			interval = Calculations.CutOverflow(interval + nSecs, nLimit);
+		}
 
-        public void IncInterval(int nSecs, int nLimit)
-        {
-            interval = Calculations.CutOverflow(interval + nSecs, nLimit);
-        }
+		public void DecInterval(int nSecs)
+		{
+			interval = Calculations.CutTrail(interval - nSecs, 0);
+		}
 
-        public void DecInterval(int nSecs)
-        {
-            interval = Calculations.CutTrail(interval - nSecs, 0);
-        }
+		public bool IsTimeOut(int nSecs)
+		{
+			return Clock() >= updateTime + nSecs;
+		}
 
-        public bool IsTimeOut(int nSecs)
-        {
-            return Clock() >= updateTime + nSecs;
-        }
+		public bool ToNextTime(int nSecs)
+		{
+			if (IsTimeOut(nSecs))
+			{
+				return Update();
+			}
 
-        public bool ToNextTime(int nSecs)
-        {
-            if (IsTimeOut(nSecs))
-            {
-                return Update();
-            }
+			return false;
+		}
 
-            return false;
-        }
+		public bool TimeOver(int nSecs)
+		{
+			if (IsActive() && IsTimeOut(nSecs))
+			{
+				return Clear();
+			}
 
-        public bool TimeOver(int nSecs)
-        {
-            if (IsActive() && IsTimeOut(nSecs))
-            {
-                return Clear();
-            }
+			return false;
+		}
 
-            return false;
-        }
+		public bool ToNextTick(int nSecs)
+		{
+			if (IsTimeOut(nSecs))
+			{
+				if (Clock() >= updateTime + nSecs * 2)
+				{
+					return Update();
+				}
 
-        public bool ToNextTick(int nSecs)
-        {
-            if (IsTimeOut(nSecs))
-            {
-                if (Clock() >= updateTime + nSecs * 2)
-                {
-                    return Update();
-                }
+				updateTime += nSecs;
+				return true;
+			}
 
-                updateTime += nSecs;
-                return true;
-            }
+			return false;
+		}
 
-            return false;
-        }
+		public int GetRemain()
+		{
+			return updateTime != 0
+					   ? Calculations.CutRange(interval - ((int)Clock() - (int)updateTime), 0, interval)
+					   : 0;
+		}
 
-        public int GetRemain()
-        {
-            return updateTime != 0
-                       ? Calculations.CutRange(interval - ((int)Clock() - (int)updateTime), 0, interval)
-                       : 0;
-        }
+		public int GetInterval()
+		{
+			return interval;
+		}
 
-        public int GetInterval()
-        {
-            return interval;
-        }
+		public static implicit operator bool(TimeOut ms)
+		{
+			return ms.ToNextTime();
+		}
+	}
 
-        public static implicit operator bool(TimeOut ms)
-        {
-            return ms.ToNextTime();
-        }
-    }
+	public sealed class TimeOutMS
+	{
+		private int interval;
+		private long updateTime;
 
-    public sealed class TimeOutMS
-    {
-        private int interval;
-        private long updateTime;
+		public TimeOutMS(int nInterval = 0)
+		{
+			if (nInterval < 0)
+			{
+				nInterval = int.MaxValue;
+			}
 
-        public TimeOutMS()
-        {            
-        }
+			interval = nInterval;
+			updateTime = 0;
+		}
 
-        public TimeOutMS(int nInterval)
-        {
-            if (nInterval < 0)
-            {
-                nInterval = int.MaxValue;
-            }
+		public long Clock()
+		{
+			return Environment.TickCount;
+		}
 
-            Startup(nInterval);
-        }
+		public bool Update()
+		{
+			updateTime = Clock();
+			return true;
+		}
 
-        public long Clock()
-        {
-            return Environment.TickCount;
-        }
+		public bool IsTimeOut()
+		{
+			return Clock() >= updateTime + interval;
+		}
 
-        public bool Update()
-        {
-            updateTime = Clock();
-            return true;
-        }
+		public bool ToNextTime()
+		{
+			if (IsTimeOut())
+			{
+				return Update();
+			}
 
-        public bool IsTimeOut()
-        {
-            return Clock() >= updateTime + interval;
-        }
+			return false;
+		}
 
-        public bool ToNextTime()
-        {
-            if (IsTimeOut())
-            {
-                return Update();
-            }
+		public void SetInterval(int nMilliSecs)
+		{
+			interval = nMilliSecs;
+		}
 
-            return false;
-        }
+		public void Startup(int nMilliSecs)
+		{
+			interval = Math.Min(nMilliSecs, int.MaxValue);
+			Update();
+		}
 
-        public void SetInterval(int nMilliSecs)
-        {
-            interval = nMilliSecs;
-        }
+		public bool TimeOver()
+		{
+			if (IsActive() && IsTimeOut())
+			{
+				return Clear();
+			}
 
-        public void Startup(int nMilliSecs)
-        {
-            interval = Math.Min(nMilliSecs, int.MaxValue);
-            Update();
-        }
+			return false;
+		}
 
-        public bool TimeOver()
-        {
-            if (IsActive() && IsTimeOut())
-            {
-                return Clear();
-            }
+		public bool IsActive()
+		{
+			return updateTime != 0;
+		}
 
-            return false;
-        }
+		public bool Clear()
+		{
+			updateTime = interval = 0;
+			return true;
+		}
 
-        public bool IsActive()
-        {
-            return updateTime != 0;
-        }
+		public void IncInterval(int nMilliSecs, int nLimit)
+		{
+			interval = Calculations.CutOverflow(interval + nMilliSecs, nLimit);
+		}
 
-        public bool Clear()
-        {
-            updateTime = interval = 0;
-            return true;
-        }
+		public void DecInterval(int nMilliSecs)
+		{
+			interval = Calculations.CutTrail(interval - nMilliSecs, 0);
+		}
 
-        public void IncInterval(int nMilliSecs, int nLimit)
-        {
-            interval = Calculations.CutOverflow(interval + nMilliSecs, nLimit);
-        }
+		public bool IsTimeOut(int nMilliSecs)
+		{
+			return Clock() >= updateTime + nMilliSecs;
+		}
 
-        public void DecInterval(int nMilliSecs)
-        {
-            interval = Calculations.CutTrail(interval - nMilliSecs, 0);
-        }
+		public bool ToNextTime(int nMilliSecs)
+		{
+			if (IsTimeOut(nMilliSecs))
+			{
+				return Update();
+			}
 
-        public bool IsTimeOut(int nMilliSecs)
-        {
-            return Clock() >= updateTime + nMilliSecs;
-        }
+			return false;
+		}
 
-        public bool ToNextTime(int nMilliSecs)
-        {
-            if (IsTimeOut(nMilliSecs))
-            {
-                return Update();
-            }
+		public bool TimeOver(int nMilliSecs)
+		{
+			if (IsActive() && IsTimeOut(nMilliSecs))
+			{
+				return Clear();
+			}
 
-            return false;
-        }
+			return false;
+		}
 
-        public bool TimeOver(int nMilliSecs)
-        {
-            if (IsActive() && IsTimeOut(nMilliSecs))
-            {
-                return Clear();
-            }
+		public bool ToNextTick(int nMilliSecs)
+		{
+			if (IsTimeOut(nMilliSecs))
+			{
+				if (Clock() >= updateTime + nMilliSecs * 2)
+				{
+					return Update();
+				}
 
-            return false;
-        }
+				updateTime += nMilliSecs;
+				return true;
+			}
 
-        public bool ToNextTick(int nMilliSecs)
-        {
-            if (IsTimeOut(nMilliSecs))
-            {
-                if (Clock() >= updateTime + nMilliSecs * 2)
-                {
-                    return Update();
-                }
+			return false;
+		}
 
-                updateTime += nMilliSecs;
-                return true;
-            }
+		public int GetRemain()
+		{
+			return updateTime != 0
+					   ? Calculations.CutRange(interval - ((int)Clock() - (int)updateTime), 0, interval)
+					   : 0;
+		}
 
-            return false;
-        }
+		public int GetInterval()
+		{
+			return interval;
+		}
 
-        public int GetRemain()
-        {
-            return updateTime != 0
-                       ? Calculations.CutRange(interval - ((int)Clock() - (int)updateTime), 0, interval)
-                       : 0;
-        }
-
-        public int GetInterval()
-        {
-            return interval;
-        }
-
-        public static implicit operator bool(TimeOutMS ms)
-        {
-            return ms.ToNextTime();
-        }
-    }
+		public static implicit operator bool(TimeOutMS ms)
+		{
+			return ms.ToNextTime();
+		}
+	}
 }

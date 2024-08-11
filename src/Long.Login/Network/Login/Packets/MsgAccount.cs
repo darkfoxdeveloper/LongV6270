@@ -71,12 +71,12 @@ namespace Long.Login.Network.Login.Packets
                 }
 
 #if DEBUG
-                if (gameAccount.AuthorityId == 1)
-                {
-                    logger.Warning("User {0} non cooperator account.", Username);
-                    await client.DisconnectWithRejectionCodeAsync(MsgConnectEx.RejectionCode.NonCooperatorAccount);
-                    return;
-                }
+                //if (gameAccount.AuthorityId == 1)
+                //{
+                //    logger.Warning("User {0} non cooperator account.", Username);
+                //    await client.DisconnectWithRejectionCodeAsync(MsgConnectEx.RejectionCode.NonCooperatorAccount);
+                //    return;
+                //}
 #endif
 
                 var realm = RealmManager.GetRealm(Realm);
@@ -87,12 +87,12 @@ namespace Long.Login.Network.Login.Packets
                     return;
                 }
 
-                if (!realm.IsProduction && gameAccount.AuthorityId == 1)
-                {
-                    logger.Warning("User {0} non cooperator account on not production realm.", Username);
-                    await client.DisconnectWithRejectionCodeAsync(MsgConnectEx.RejectionCode.NonCooperatorAccount);
-                    return;
-                }
+                //if (!realm.IsProduction && gameAccount.AuthorityId == 1)
+                //{
+                //    logger.Warning("User {0} non cooperator account on not production realm.", Username);
+                //    await client.DisconnectWithRejectionCodeAsync(MsgConnectEx.RejectionCode.NonCooperatorAccount);
+                //    return;
+                //}
 
                 byte vipLevel = 0;
                 var vipData = VipRepository.GetAccountVip(gameAccount.Id);
@@ -169,7 +169,7 @@ namespace Long.Login.Network.Login.Packets
                     buffer[x] ^= pSeed[(x * 6 % 4) % length];
                 }
             }
-            return Encoding.UTF8.GetString(buffer).Trim('\0');
+            return Encoding.ASCII.GetString(buffer).Trim('\0');
         }
     }
 }

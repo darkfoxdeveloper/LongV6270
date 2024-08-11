@@ -10,7 +10,7 @@ namespace Long.Login.Database.Repositories
             return context.GameAccounts.Where(x => x.UserName == username).Take(1).FirstOrDefault();
         }
 
-        public static GameAccount GetByID(long id)
+        public static GameAccount GetByID(int id)
         {
             using var context = new ServerDbContext();
             return context.GameAccounts.Where(x => x.Id == id).Take(1).FirstOrDefault();

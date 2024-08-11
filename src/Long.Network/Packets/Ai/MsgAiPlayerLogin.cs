@@ -1,9 +1,14 @@
 ﻿using Long.Network.Sockets;
 using ProtoBuf;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Long.Network.Packets.Ai
 {
-    public abstract class MsgAiPlayerLogin<TActor> : MsgProtoBufBase<TActor, MsgAiPlayerLoginContract> where TActor : TcpServerActor
+	public abstract class MsgAiPlayerLogin<TActor> : MsgProtoBufBase<TActor, MsgAiPlayerLoginContract> where TActor : TcpServerActor
 	{
 		protected MsgAiPlayerLogin() : base(PacketType.MsgAiPlayerLogin) { }
 	}
