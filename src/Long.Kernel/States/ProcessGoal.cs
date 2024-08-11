@@ -519,6 +519,7 @@ namespace Long.Kernel.States
             var task = GetTask(taskId);
             if (task == null)
             {
+                logger.Warning($"Not task defined in 'cq_process_task' for {taskId}.");
                 return false;
             }
 

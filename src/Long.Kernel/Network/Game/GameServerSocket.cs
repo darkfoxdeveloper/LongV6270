@@ -155,8 +155,9 @@ namespace Long.Kernel.Network.Game
                     case PacketType.MsgGLRankingList: msg = new MsgGLRankingList(); break;
                     case PacketType.MsgTeamArenaHeroData: msg = new MsgQualifierTeamPKStatistic(); break;
 					case PacketType.MsgTeamArenaInteractive: msg = new MsgTeamArenaInteractive(); break;
+                    case PacketType.MsgPkStatistic: msg = new MsgPkStatistic(); break;
 
-					default:
+                    default:
                         {
                             if (!handled)
                             {

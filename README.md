@@ -31,10 +31,9 @@ Download preconfigurated client from here:
 [__client__](https://mega.nz/file/xExUFQ5K#UzSTpyfbCazeQtxF8vpfv__E0kvAVLC-hq5_Isu6BXA)
 
 ## TODO
-- Fix mobs (Packets are for 6609 and need to be changed)
-- PK Explorer System
+- PK Explorer System (Now have the packet vinculated but no logic added)
 - Prestige System
-- Hero System
+- Hero System (Implemented but need something in database for fill)
 - Daily Quests (Incomplete)
 - Daily Signin (Tab in Reward) (Incomplete)
 - Activeness (Tab in Reward)
