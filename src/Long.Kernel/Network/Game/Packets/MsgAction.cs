@@ -1,19 +1,19 @@
-﻿using Long.Kernel.Managers;
+﻿using Long.Database.Entities;
+using Long.Game.Network.Ai.Packets;
+using Long.Kernel.Managers;
+using Long.Kernel.Network.Ai;
 using Long.Kernel.Processors;
 using Long.Kernel.States;
+using Long.Kernel.States.Items;
+using Long.Kernel.States.Magics;
+using Long.Kernel.States.Status;
 using Long.Kernel.States.User;
 using Long.Kernel.States.World;
 using Long.Network.Packets;
-using static Long.Kernel.States.Role;
-using System.Drawing;
-using Long.Database.Entities;
-using Long.Kernel.States.Items;
-using static Long.Kernel.States.User.Character;
-using Long.Kernel.States.Status;
 using Long.Network.Packets.Ai;
-using Long.Game.Network.Ai.Packets;
-using Long.Kernel.Network.Ai;
-using Long.Kernel.States.Magics;
+using System.Drawing;
+using static Long.Kernel.States.Role;
+using static Long.Kernel.States.User.Character;
 
 namespace Long.Kernel.Network.Game.Packets
 {

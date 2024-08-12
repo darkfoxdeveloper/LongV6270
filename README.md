@@ -32,6 +32,7 @@ Download preconfigurated client from here:
 
 ## TODO
 ~~-PK Explorer System (Now have the packet vinculated but no logic added)~~
+- OfflineTG (Incomplete)
 - Prestige System
 - Hero System (Implemented but need something in database for fill)
 - Daily Quests (Incomplete)
