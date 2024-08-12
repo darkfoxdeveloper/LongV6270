@@ -157,6 +157,7 @@ namespace Long.Kernel.Network.Game
 					case PacketType.MsgTeamArenaInteractive: msg = new MsgTeamArenaInteractive(); break;
                     case PacketType.MsgPkStatistic: msg = new MsgPkStatistic(); break;
                     case PacketType.MsgTraining: msg = new MsgTraining(); break;
+                    case PacketType.MsgChangeName: msg = new MsgChangeName(); break;
 
                     default:
                         {
