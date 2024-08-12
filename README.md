@@ -16,15 +16,15 @@ When the live server leaves the Beta Stage, we will start keeping stable version
 | [__main__](https://gitlab.com/world-conquer-online/canyon/long/-/tree/main) | [![pipeline status](https://gitlab.com/world-conquer-online/canyon/long/badges/main/pipeline.svg)](https://gitlab.com/world-conquer-online/canyon/long/-/commits/main) | Not published | Targets the official 6270 client. |
 
 ## Guide for easy setup
-1- Copy folder map/map and map/Scenes from client to Bin folder of Solution
+1- Build all solution (not only gameserver and accountserver)
 
 2- Copy lua folder from solution root
 
-3- Build all solution (not only gameserver and accountserver)
+3- In table account_cq.realm of the database mysql change the ip and user, password etc
 
-4- In table account_cq.realm of the database mysql change the ip and user, password etc
+4- Change database configuration in bin folder (json files like Config.Game.json and Config.Login.json)
 
-5- Change database configuration in bin folder (json files like Config.Game.json and Config.Login.json)
+5- Copy folder map/map and map/Scenes from client to Bin folder of Solution
 
 ## Client download
 Download preconfigurated client from here:
@@ -48,7 +48,7 @@ Download preconfigurated client from here:
 - Arenas
 - House Furnitures (Incomplete)
 - Titles (Not from Wardrobe, that are fine)
-- Lottery (Not working 100% fine)
+- Lottery (Are working good but need change animations for the correct box)
 - Mentor (Not 100% implemented)
 - Some portals are wrong (Like portal of phoenix city to twin city)
 
