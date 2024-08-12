@@ -31,7 +31,7 @@ Download preconfigurated client from here:
 [__client__](https://mega.nz/file/xExUFQ5K#UzSTpyfbCazeQtxF8vpfv__E0kvAVLC-hq5_Isu6BXA)
 
 ## TODO
-~~ - PK Explorer System (Now have the packet vinculated but no logic added) ~~
+~~-PK Explorer System (Now have the packet vinculated but no logic added)~~
 - Prestige System
 - Hero System (Implemented but need something in database for fill)
 - Daily Quests (Incomplete)
