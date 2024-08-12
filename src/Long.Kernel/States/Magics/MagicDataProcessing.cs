@@ -301,11 +301,6 @@ namespace Long.Kernel.States.Magics
 				return false;
 			}
 
-			if (magic.Name == "TripleAttack")
-			{
-
-			}
-
 			if (magic == null)
 			{
 				return false;

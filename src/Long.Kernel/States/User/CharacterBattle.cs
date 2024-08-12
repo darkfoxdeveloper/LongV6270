@@ -2315,6 +2315,9 @@ namespace Long.Kernel.States.User
 					await targetUser.JiangHu.SpendTalentAsync();
 				}
 
+                if (PkStatistic != null) {
+                    await PkStatistic.KillAsync(targetUser);
+                }
 				//LuaScriptManager.Run(this, null, null, string.Empty, $"Event_Kill_User()");
 				await GameAction.ExecuteActionAsync(USER_KILL_ACTION, this, target, null, string.Empty);
 			}
