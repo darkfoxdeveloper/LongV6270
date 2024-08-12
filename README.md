@@ -51,6 +51,7 @@ Download preconfigurated client from here:
 - Lottery (Are working good but need change animations for the correct box)
 - Mentor (Not 100% implemented)
 - Some portals are wrong (Like portal of phoenix city to twin city)
+- Some systems of market not working fully
 
 
 ## Getting Started

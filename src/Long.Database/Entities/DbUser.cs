@@ -45,7 +45,7 @@
         [Column("task_mask")] public virtual uint TaskMask { get; set; }
         [Column("home_id")] public virtual uint HomeIdentity { get; set; }
         [Column("lock_key")] public virtual ulong LockKey { get; set; }
-        [Column("auto_exercise")] public virtual ushort AutoExercise { get; set; }
+        [Column("auto_exercise")] public virtual uint AutoExercise { get; set; }
         [Column("time_of_life")] public virtual uint LuckyTime { get; set; }
         [Column("vip_value")] public virtual uint VipValue { get; set; }
         [Column("business")] public virtual uint Business { get; set; }
