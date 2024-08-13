@@ -1482,7 +1482,7 @@ namespace Long.Kernel.States.User
 			}
 		}
 
-		public ushort CurrentTrainingTime => user.AutoExercise;
+		public ushort CurrentTrainingTime => (ushort)user.AutoExercise;
 
 		public bool IsOfflineTraining => user.AutoExercise != 0;
 

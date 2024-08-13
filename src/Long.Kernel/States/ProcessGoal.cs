@@ -88,6 +88,23 @@ namespace Long.Kernel.States
             return ServerDbContext.UpdateAsync(goal);
         }
 
+        public Task SetGoalAsClaimed(uint goalId, bool claimed = true)
+        {
+            var goal = goals.GetOrAdd(goalId, new DbPlayerProcessGoal
+            {
+                GoalId = goalId,
+                UserId = user.Identity
+            });
+
+            goal.ProcessAward = claimed;
+
+            if (goal.Id == 0)
+            {
+                return ServerDbContext.CreateAsync(goal);
+            }
+            return ServerDbContext.UpdateAsync(goal);
+        }
+
         private bool IsRewardClaimed(uint stage, int rewardIdx)
         {
             if (goals.TryGetValue(stage, out var goal))
@@ -196,10 +213,13 @@ namespace Long.Kernel.States
             }
 
             ulong schedule = task.Schedule;
+            // TODO el goal completado se pierde xk si no lo recojes (falta el status guardarlo bien y refrescar)
             switch (goalType)
             {
                 case GoalType.LevelUp: return user.Level;
                 case GoalType.Metempsychosis: return user.Metempsychosis;
+                case GoalType.BegginerTutorialCompletion: return 1;
+                case GoalType.XpSkillKills: return user.XpPoints;
                 case GoalType.EquipmentQuality:
                     {
                         uint count = 0;
@@ -600,6 +620,7 @@ namespace Long.Kernel.States
                     await user.UserPackage.AwardItemAsync(goal.ItemType3, ItemPosition.Inventory, goal.Monopoly3 != 0, true);
                 }
             }
+            await SetGoalAsClaimed(goal.Id);
             return true;
         }
 
@@ -608,10 +629,10 @@ namespace Long.Kernel.States
             MsgProcessGoalTask msg = new MsgProcessGoalTask
             {
                 Param = id,
-                Completed = IsStageCompleted(id)
+                Completed = IsStageCompleted(id) && (user.StageGoal.goals.ContainsKey(id) && user.StageGoal.goals[id].ProcessAward)
             };
-            var goal = GetTasks(id);
-            foreach (var task in goal)
+            var tasks = GetTasks(id);
+            foreach (var task in tasks)
             {
                 int taskIndex = (int)((task.Id - 1) % 100);
                 bool completion = IsRewardReady(task);

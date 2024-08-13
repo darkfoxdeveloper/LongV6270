@@ -1,5 +1,4 @@
-﻿using Long.Kernel.Managers;
-using Long.Network.Packets;
+﻿using Long.Network.Packets;
 
 namespace Long.Kernel.Network.Game.Packets
 {
