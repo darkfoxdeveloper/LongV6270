@@ -88,7 +88,7 @@ namespace Long.Kernel.States
             return ServerDbContext.UpdateAsync(goal);
         }
 
-        public Task SetGoalAsClaimed(uint goalId, bool claimed = true)
+        public Task SetGoalAsClaimedAsync(uint goalId, bool claimed = true)
         {
             var goal = goals.GetOrAdd(goalId, new DbPlayerProcessGoal
             {
@@ -213,12 +213,11 @@ namespace Long.Kernel.States
             }
 
             ulong schedule = task.Schedule;
-            // TODO el goal completado se pierde xk si no lo recojes (falta el status guardarlo bien y refrescar)
             switch (goalType)
             {
                 case GoalType.LevelUp: return user.Level;
                 case GoalType.Metempsychosis: return user.Metempsychosis;
-                case GoalType.BegginerTutorialCompletion: return 1;
+                case GoalType.BegginerTutorialCompletion: return 1; // TODO in future maybe can implement that
                 case GoalType.XpSkillKills: return user.XpPoints;
                 case GoalType.EquipmentQuality:
                     {
@@ -263,6 +262,9 @@ namespace Long.Kernel.States
                         return count;
                     }
                 case GoalType.ProfessionPromotion: return user.ProfessionLevel;
+                case GoalType.MakeJoinTeam: return 1; // TODO in future maybe can implement that
+                case GoalType.WinQualifier: return 1; // TODO in future maybe can implement that
+                case GoalType.WinTeamQualifier: return 1; // TODO in future maybe can implement that
                 case GoalType.CreateJoinSyndicate: return user.SyndicateIdentity;
                 case GoalType.AddFriends: return (uint)(user.Relation?.FriendAmount ?? 0);                
                 case GoalType.SuperTalismans:
@@ -511,6 +513,12 @@ namespace Long.Kernel.States
                         }
                         return count;
                     }
+                case GoalType.UpgradeEquipment:
+                case GoalType.ExperienceMultiplier:
+                case GoalType.PlayLottery:
+                    {
+                        return 1; // TODO in future maybe can implement that
+                    }
                 default:
                     {
                         logger.Warning("Unhandled ProcessGoal Type {0} for user {1} {2}", goalType, user.Identity, user.Name);
@@ -620,7 +628,7 @@ namespace Long.Kernel.States
                     await user.UserPackage.AwardItemAsync(goal.ItemType3, ItemPosition.Inventory, goal.Monopoly3 != 0, true);
                 }
             }
-            await SetGoalAsClaimed(goal.Id);
+            await SetGoalAsClaimedAsync(goal.Id);
             return true;
         }
 
