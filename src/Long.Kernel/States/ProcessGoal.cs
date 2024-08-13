@@ -262,9 +262,17 @@ namespace Long.Kernel.States
                         return count;
                     }
                 case GoalType.ProfessionPromotion: return user.ProfessionLevel;
-                case GoalType.MakeJoinTeam: return 1; // TODO in future maybe can implement that
+                case GoalType.MakeJoinTeam: return user.Team != null ? 1u : 0u;
                 case GoalType.WinQualifier: return 1; // TODO in future maybe can implement that
+                case GoalType.ExperienceMultiplier:
+                    {
+                        return user.ExperienceMultiplier > 1 ? 1u : 0u;
+                    }
                 case GoalType.WinTeamQualifier: return 1; // TODO in future maybe can implement that
+                case GoalType.PlayLottery:
+                    {
+                        return user.LotteryRetries > 0 ? 1u : 0u;
+                    }
                 case GoalType.CreateJoinSyndicate: return user.SyndicateIdentity;
                 case GoalType.AddFriends: return (uint)(user.Relation?.FriendAmount ?? 0);                
                 case GoalType.SuperTalismans:
@@ -514,10 +522,45 @@ namespace Long.Kernel.States
                         return count;
                     }
                 case GoalType.UpgradeEquipment:
-                case GoalType.ExperienceMultiplier:
-                case GoalType.PlayLottery:
                     {
-                        return 1; // TODO in future maybe can implement that
+                        uint count = 0;
+                        for (ItemPosition pos = ItemPosition.EquipmentBegin; pos <= ItemPosition.EquipmentEnd; pos++)
+                        {
+                            Item item = user.UserPackage[pos];
+                            if (item == null)
+                            {
+                                switch (pos)
+                                {
+                                    case ItemPosition.Mount:
+                                    case ItemPosition.Gourd:
+                                    case ItemPosition.Garment:
+                                    case ItemPosition.RightHandAccessory:
+                                    case ItemPosition.LeftHandAccessory:
+                                    case ItemPosition.MountArmor:
+                                    case (ItemPosition)13:
+                                    case (ItemPosition)14:
+                                        continue;
+                                    default:
+                                        break;
+                                }
+                            }
+
+                            if (item == null)
+                            {
+                                break;
+                            }
+
+                            if (!item.IsEquipment())
+                            {
+                                continue;
+                            }
+
+                            if (item.GetLevel() > 15)
+                            {
+                                count++;
+                            }
+                        }
+                        return count;
                     }
                 default:
                     {
