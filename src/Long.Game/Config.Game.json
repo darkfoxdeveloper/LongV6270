@@ -75,8 +75,8 @@
     ]
   },
   "Modules": [
-    "AstProf",
     "Pigeon",
+    "Qualifying",
     "Guide",
     "Peerage",
     "Flower",
@@ -90,9 +90,9 @@
     "Booth",
     "Relation",
     "Team",
+    "AstProf",
     "Fate",
     "JiangHu",
-    "NeiGong",
-    "Qualifying"
+    "NeiGong"
   ]
 }

@@ -563,6 +563,9 @@ namespace Long.Kernel.States.World
             Passway passway = passways.FirstOrDefault(x => x.Index == idxPassage);
             idMap = passway.TargetMap;
             target = new Point(passway.TargetX, passway.TargetY);
+            #if DEBUG
+                logger.Debug($"Target passway: {passway.TargetX} {passway.TargetY}");
+            #endif
 
             GameMap targetMap = MapManager.GetMap(idMap);
             if (targetMap == null || !targetMap.IsValidPoint(passway.TargetX, passway.TargetY))

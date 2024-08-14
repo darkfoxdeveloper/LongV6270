@@ -31,10 +31,9 @@ Download preconfigurated client from here:
 [__client__](https://mega.nz/file/xExUFQ5K#UzSTpyfbCazeQtxF8vpfv__E0kvAVLC-hq5_Isu6BXA)
 
 ## TODO
-~~-PK Explorer System (Now have the packet vinculated but no logic added)~~
 - OfflineTG (Incomplete)
 - Prestige System
-- Hero System (Implemented but need something in database for fill)
+- Hero System (Not fully because need some more data in database but working for first 4 goals)
 - Daily Quests (Incomplete)
 - Daily Signin (Tab in Reward) (Incomplete)
 - Activeness (Tab in Reward)
@@ -44,13 +43,11 @@ Download preconfigurated client from here:
 - Perfection
 - Chat (Ghost channel for example not implemented)
 - Some npcs missing (like some npcs for quest of tower and fan)
-- Some npcs are showing errors of lua (Example: PirateLord in TwinCity on the Armorer NPC)
 - Arenas
 - House Furnitures (Incomplete)
 - Titles (Not from Wardrobe, that are fine)
 - Lottery (Are working good but need change animations for the correct box)
 - Mentor (Not 100% implemented)
-- Some portals are wrong (Like portal of phoenix city to twin city)
 - Some systems of market not working fully
 
 

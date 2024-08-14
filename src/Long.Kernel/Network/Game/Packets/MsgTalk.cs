@@ -477,17 +477,24 @@ namespace Long.Kernel.Network.Game.Packets
                             return true;
                         }
                     case "summonmonster":
-						{
-                            if (uint.TryParse(arg, out uint MonsterType))
+                        {
+                            string[] argsList = arg.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                            if (argsList.Length > 0 && uint.TryParse(argsList[0], out uint MonsterType))
                             {
                                 DbMonstertype monstertype = RoleManager.GetMonstertype(MonsterType);
                                 var monster = new Monster(monstertype, (uint)IdentityManager.Monster.GetNextIdentity);
+                                uint oldMesh = monster.Mesh;
+                                if (argsList.Length > 1)
+                                {
+                                    monster.Mesh = uint.Parse(argsList[1]);
+                                }
                                 if (!await monster.InitializeAsync(user.MapIdentity, user.X, user.Y))
                                 {
                                 }
 
                                 RoleManager.AddRole(monster);
                                 await monster.EnterMapAsync();
+                                monster.Mesh = oldMesh;
                             }
 							return true;
 						}
@@ -637,6 +644,7 @@ namespace Long.Kernel.Network.Game.Packets
                         }
 
                     case "pro":
+                    case "class":
                         {
                             if (byte.TryParse(arg, out byte proProf))
                             {
@@ -1849,6 +1857,7 @@ namespace Long.Kernel.Network.Game.Packets
             switch (command)
             {
                 case "pos":
+                case "map":
                     {
                         await user.SendAsync($"MapID[{user.MapIdentity}],Name[{user.Map?.Name}],Pos[{user.X},{user.Y}]", TalkChannel.Talk, Color.White);
                         return true;
