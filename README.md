@@ -41,7 +41,6 @@ Download preconfigurated client from here:
 - Poker
 - Bulletin (I think are not implemented but need see if have some parts coded)
 - Perfection
-- Chat (Ghost channel for example not implemented)
 - Some npcs missing (like some npcs for quest of tower and fan)
 - Arenas
 - House Furnitures (Incomplete)

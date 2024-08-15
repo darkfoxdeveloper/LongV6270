@@ -1,5 +1,6 @@
 ﻿using System.Configuration.Internal;
 using System.Drawing;
+using System.Reflection;
 using Long.Database.Entities;
 using Long.Game.Network.Ai.Packets;
 using Long.Kernel.Database;
@@ -456,6 +457,29 @@ namespace Long.Kernel.Network.Game.Packets
                         MessageBoard.AddMessage(user, Message, Channel);
                         break;
                     }
+
+                case TalkChannel.Ghost:
+                    {
+                        if (user.IsAlive)
+                        {
+                            return;
+                        }
+
+                        await user.BroadcastRoomMsgAsync(this, false);
+                        break;
+                    }
+
+                case TalkChannel.World:
+                    {
+                        //if (!user.CanUseWorldChat())
+                        //{
+                        //    return;
+                        //}
+
+                        await RoleManager.BroadcastWorldMsgAsync(this, user.Identity);
+                        break;
+                    }
+
 
                 default:
                     {

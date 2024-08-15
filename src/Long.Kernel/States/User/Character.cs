@@ -42,6 +42,7 @@ namespace Long.Kernel.States.User
         private static readonly ILogger logger = Log.ForContext<Character>();
         private readonly DbUser user;
 
+        private readonly TimeOut worldChatTimer = new();
         private readonly TimeOut dateSyncTimer = new();
         private readonly TimeOut autoHealTimer = new(AUTOHEALLIFE_TIME);
 		private readonly TimeOut miningTimer = new();
@@ -373,6 +374,7 @@ namespace Long.Kernel.States.User
 
 
 		#endregion
+
 		#region Currency
 
         public ulong Silvers
@@ -1287,6 +1289,26 @@ namespace Long.Kernel.States.User
                 }
             }
             KoCount = 0;
+        }
+
+        #endregion
+
+        #region Chat
+
+        public bool CanUseWorldChat()
+        {
+            if (Level < 50)
+            {
+                return false;
+            }
+
+            if (Level < 70 && worldChatTimer.ToNextTime(60))
+            {
+                return false;
+            }
+
+            // TODO get correct times
+            return worldChatTimer.ToNextTime(15);
         }
 
         #endregion
