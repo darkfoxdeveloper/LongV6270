@@ -212,7 +212,15 @@ namespace Long.Kernel.States.Auction
                     });
                 }
             }
-            await ServerDbContext.CreateAsync(emails);
+            foreach(var mail in emails)
+            {
+                if (mail.Title.Length > 32)
+                {
+                    mail.Title = mail.Title.Substring(0, 29) + "...";
+                }
+                await ServerDbContext.CreateAsync(mail);
+            }
+            //await ServerDbContext.CreateAsync(emails);
         }
 
         public async Task<bool> BuyoutAsync(Character buyer)
@@ -353,7 +361,15 @@ namespace Long.Kernel.States.Auction
                 }
             }
 
-            await ServerDbContext.CreateAsync(emails);
+            foreach (var mail in emails)
+            {
+                if (mail.Title.Length > 32)
+                {
+                    mail.Title = mail.Title.Substring(0, 29) + "...";
+                }
+                await ServerDbContext.CreateAsync(mail);
+            }
+            //await ServerDbContext.CreateAsync(emails);
         }
 
         public async Task PlaceBidAsync(Character user, uint value, int amount = 1)

@@ -21,8 +21,8 @@ namespace Long.Kernel.Network.Game.Packets
         public uint Buyout { get; set; }
         public int Duration { get; set; }
         public bool Confirm { get; set; }
-        public ushort UnknownLeft { get; set; }
-        public ushort UnknownRight { get; set; }
+        //public ushort UnknownLeft { get; set; }
+        //public ushort UnknownRight { get; set; }
 
         // get { return Duration == 12 ? 500 : Duration == 24 ? 1100 : Duration >= 48 ? 2250 : 1000000; }
 
@@ -39,8 +39,8 @@ namespace Long.Kernel.Network.Game.Packets
             Buyout = reader.ReadUInt32();
             Duration = reader.ReadInt32();
             Confirm = reader.ReadInt32() != 0;
-            UnknownLeft = reader.ReadUInt16();
-            UnknownRight = reader.ReadUInt16();
+            //UnknownLeft = reader.ReadUInt16();
+            //UnknownRight = reader.ReadUInt16();
         }
 
         public override byte[] Encode()
@@ -55,8 +55,8 @@ namespace Long.Kernel.Network.Game.Packets
             writer.Write(Buyout);
             writer.Write(Duration);
             writer.Write(Confirm ? 1 : 0);
-            writer.Write(UnknownLeft);
-            writer.Write(UnknownRight);
+            //writer.Write(UnknownLeft);
+            //writer.Write(UnknownRight);
             return writer.ToArray();
         }
 
