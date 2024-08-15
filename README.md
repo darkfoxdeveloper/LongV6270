@@ -31,7 +31,7 @@ Download preconfigurated client from here:
 [__client__](https://mega.nz/file/xExUFQ5K#UzSTpyfbCazeQtxF8vpfv__E0kvAVLC-hq5_Isu6BXA)
 
 ## TODO
-- OfflineTG (Incomplete)
+- OfflineTG (Incomplete, not working)
 - Prestige System
 - Hero System (Not fully because need some more data in database but working for first 4 goals)
 - Daily Quests (Incomplete)
@@ -43,10 +43,9 @@ Download preconfigurated client from here:
 - Perfection
 - Some npcs missing (like some npcs for quest of tower and fan)
 - Arenas
-- House Furnitures (Incomplete)
+- House Furnitures (Incomplete, with missing actions i think are all ok)
 - Titles (Not from Wardrobe, that are fine)
 - Lottery (Are working good but need change animations for the correct box)
-- Mentor (Not 100% implemented)
 - Some systems of market not working fully
 
 
