@@ -2,14 +2,13 @@
 using Long.Kernel.Network.Ai;
 using Long.Kernel.Network.Ai.Packets;
 using Long.Kernel.Network.Game.Packets;
-using Long.Kernel.States.Magics;
 using Long.Kernel.States.User;
 using System.Collections.Concurrent;
 using static Long.Kernel.Network.Game.Packets.MsgAura;
 
 namespace Long.Kernel.States.Status
 {
-	public sealed class StatusSet
+    public sealed class StatusSet
 	{
 		public const int NONE = 0,
 			CRIME = 1,

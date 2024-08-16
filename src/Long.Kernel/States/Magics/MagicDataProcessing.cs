@@ -195,7 +195,7 @@ namespace Long.Kernel.States.Magics
 
 				Item leftHand = user.UserPackage[Item.ItemPosition.LeftHand];
 				if ((magic.Type == TWOFOLDBLADES_ID || magic.Type == SUPERTWOFOLDBLADES_ID)
-					&& user.UserPackage[Item.ItemPosition.RightHand].GetItemSubType() != leftHand?.GetItemSubType())
+					&& user.GetEquipment(Item.ItemPosition.RightHand).GetItemSubType() != leftHand?.GetItemSubType())
 				{
 					return (false, x, y);
 				}

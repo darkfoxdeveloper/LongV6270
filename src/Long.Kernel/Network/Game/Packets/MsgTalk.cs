@@ -1,6 +1,7 @@
 ﻿using System.Configuration.Internal;
 using System.Drawing;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 using Long.Database.Entities;
 using Long.Game.Network.Ai.Packets;
 using Long.Kernel.Database;
@@ -25,6 +26,7 @@ using Long.World.Enums;
 using Long.World.Map;
 using Newtonsoft.Json;
 using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Utilities;
 using static Long.Kernel.Network.Game.Packets.MsgAction;
 
 namespace Long.Kernel.Network.Game.Packets
@@ -599,8 +601,21 @@ namespace Long.Kernel.Network.Game.Packets
 							}
 							await user.SendEffectAsync(splitParams[0], true);
 							return true;
-						}
-					case "creategen":
+                        }
+                    case "status":
+                        {
+                            string[] splitParams = arg.Split(" ");
+                            if (splitParams.Length == 1)
+                            {
+                                splitParams = new string[] { splitParams[0], "5" };
+                            }
+                            if (splitParams.Length >= 2)
+                            {
+                                await user.AttachStatusAsync(user, int.Parse(splitParams[0]), 0, int.Parse(splitParams[1]), 0, null);
+                            }
+                            return true;
+                        }
+                    case "creategen":
 						{
 							await user.SendAsync(
 								"Attention, use this command only on localhost tests or the generator thread may crash.");
