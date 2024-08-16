@@ -46,7 +46,9 @@ Download preconfigurated client from here:
 - House Furnitures (Incomplete, with missing actions i think are all ok)
 - Titles (Not from Wardrobe, that are fine)
 - Lottery (Are working good but need change animations for the correct box)
-- Some systems of market not working fully
+- DiceKing in market not working
+- Mesh not changing when using Skill for transform to Assasin
+- Rascagruta not have mobs and portals are wrong, not have npcs for the quests
 
 
 ## Getting Started

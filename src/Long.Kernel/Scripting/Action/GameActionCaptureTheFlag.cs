@@ -1,19 +1,13 @@
 ﻿using Long.Database.Entities;
-using Long.Kernel.Managers;
 using Long.Kernel.States;
 using Long.Kernel.States.Items;
 using Long.Kernel.States.User;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Long.Kernel.Scripting.Action
 {
-	public partial class GameAction
+    public partial class GameAction
 	{
-		//PENDIENTE DE IMPLEMENTAR
+		//TODO
 		private static async Task<bool> ExecuteActionCaptureTheFlagCheckAsync(DbAction action, Character user, Role role, Item item, string[] inputs)
 		{
 			//CaptureTheFlag captureTheFlag = EventManager.GetEvent<CaptureTheFlag>();

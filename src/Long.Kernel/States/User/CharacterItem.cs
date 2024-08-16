@@ -709,12 +709,14 @@ namespace Long.Kernel.States.User
 			var items = new List<uint>();
 			string stringIdItem = idItem.ToString();
 			if (stringIdItem.Length == 8)
-			{
-				int mode = int.Parse(stringIdItem.Substring(0, 2));
+            {
+                var leftHandItemEquipped = GetEquipment(Item.ItemPosition.LeftHand);
+                var rightHandItemEquipped = GetEquipment(Item.ItemPosition.RightHand);
+                int mode = int.Parse(stringIdItem.Substring(0, 2));
 				int weaponType1 = int.Parse(stringIdItem.Substring(2, 3));
-				int rightHandSubtype = UserPackage[Item.ItemPosition.RightHand]?.GetItemSubType() ?? 0;
+				int rightHandSubtype = leftHandItemEquipped?.GetItemSubType() ?? 0;
 				int weaponType2 = int.Parse(stringIdItem.Substring(5, 3));
-				int leftHandSubtype = UserPackage[Item.ItemPosition.RightHand]?.GetItemSubType() ?? 0;
+				int leftHandSubtype = rightHandItemEquipped?.GetItemSubType() ?? 0;
 
 				if (mode == 61)
 				{
@@ -751,16 +753,19 @@ namespace Long.Kernel.States.User
 					continue;
 				}
 
-				if (UserPackage[Item.ItemPosition.RightHand] != null &&
-					UserPackage[Item.ItemPosition.RightHand].GetItemSubType() == dwItem &&
-					UserPackage[Item.ItemPosition.RightHand].Durability >= dwNum)
+                var leftHandItemEquipped = GetEquipment(Item.ItemPosition.LeftHand);
+                var rightHandItemEquipped = GetEquipment(Item.ItemPosition.RightHand);
+
+                if (rightHandItemEquipped != null &&
+                    rightHandItemEquipped.GetItemSubType() == dwItem &&
+                    rightHandItemEquipped.Durability >= dwNum)
 				{
 					return true;
 				}
 
-				if (UserPackage[Item.ItemPosition.LeftHand] != null &&
-					UserPackage[Item.ItemPosition.LeftHand].GetItemSubType() == dwItem &&
-					UserPackage[Item.ItemPosition.LeftHand].Durability >= dwNum)
+				if (leftHandItemEquipped != null &&
+                    leftHandItemEquipped.GetItemSubType() == dwItem &&
+                    leftHandItemEquipped.Durability >= dwNum)
 				{
 					return true;
 				}
@@ -768,7 +773,7 @@ namespace Long.Kernel.States.User
 				ushort[] set1Hand = { 410, 420, 421, 430, 440, 450, 460, 480, 481, 490 };
 				ushort[] set2Hand = { 510, 511, 530, 540, 560, 561, 580 };
 				ushort[] setSword = { 420, 421 };
-				ushort[] setProfessional = { 601, 610, 611, 612, 613, 614, 616, 617, 619, 620 };
+				//ushort[] setProfessional = { 601, 610, 611, 612, 613, 614, 616, 617, 619, 620 };
 
 				if (dwItem == 40000 || dwItem == 400)
 				{
@@ -788,9 +793,9 @@ namespace Long.Kernel.States.User
 						}
 					}
 
-					if (UserPackage[Item.ItemPosition.LeftHand] != null)
+					if (leftHandItemEquipped != null)
 					{
-						Item item = UserPackage[Item.ItemPosition.LeftHand];
+						Item item = leftHandItemEquipped;
 						if (item != null)
 						{
 							for (var i = 0; i < set1Hand.Length; i++)
@@ -807,14 +812,14 @@ namespace Long.Kernel.States.User
 
 				if (dwItem == 50000)
 				{
-					if (UserPackage[Item.ItemPosition.RightHand] != null)
+					if (rightHandItemEquipped != null)
 					{
 						if (dwItem == 50000)
 						{
 							return true;
 						}
 
-						Item item = UserPackage[Item.ItemPosition.RightHand];
+						Item item = rightHandItemEquipped;
 						for (var i = 0; i < set2Hand.Length; i++)
 						{
 							if (item.GetItemSubType() == set2Hand[i] && item.Durability >= dwNum)
@@ -827,11 +832,11 @@ namespace Long.Kernel.States.User
 
 				if (dwItem == 50) // arrow
 				{
-					if (UserPackage[Item.ItemPosition.RightHand] != null &&
-						UserPackage[Item.ItemPosition.LeftHand] != null)
+					if (rightHandItemEquipped != null &&
+                        leftHandItemEquipped != null)
 					{
-						Item item = UserPackage[Item.ItemPosition.RightHand];
-						Item arrow = UserPackage[Item.ItemPosition.LeftHand];
+						//Item item = rightHandItemEquipped;
+						Item arrow = leftHandItemEquipped;
 						if (arrow.GetItemSubType() == 1050 && arrow.Durability >= dwNum)
 						{
 							return true;
@@ -841,10 +846,10 @@ namespace Long.Kernel.States.User
 
 				if (dwItem == 500)
 				{
-					if (UserPackage[Item.ItemPosition.RightHand] != null &&
-						UserPackage[Item.ItemPosition.LeftHand] != null)
+					if (rightHandItemEquipped != null &&
+                        leftHandItemEquipped != null)
 					{
-						Item item = UserPackage[Item.ItemPosition.RightHand];
+						Item item = rightHandItemEquipped;
 						if (item.GetItemSubType() == idItem && item.Durability >= dwNum)
 						{
 							return true;
@@ -854,9 +859,9 @@ namespace Long.Kernel.States.User
 
 				if (dwItem == 420)
 				{
-					if (UserPackage[Item.ItemPosition.RightHand] != null)
+					if (rightHandItemEquipped != null)
 					{
-						Item item = UserPackage[Item.ItemPosition.RightHand];
+						Item item = rightHandItemEquipped;
 						for (var i = 0; i < setSword.Length; i++)
 						{
 							if (item.GetItemSubType() == setSword[i] && item.Durability >= dwNum)

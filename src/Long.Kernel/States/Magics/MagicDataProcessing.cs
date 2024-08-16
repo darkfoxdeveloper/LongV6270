@@ -15,18 +15,15 @@ using Long.Shared.Managers;
 using Long.Shared.Mathematics;
 using Long.World.Enums;
 using Long.World.Map;
-using Org.BouncyCastle.Asn1.X509;
 using System.Drawing;
-using System.Security.Principal;
 using static Long.Kernel.Network.Game.Packets.MsgAction;
 using static Long.Kernel.Network.Game.Packets.MsgInteract;
 using static Long.Kernel.Network.Game.Packets.MsgWalk;
 using static Long.Kernel.States.Magics.Magic;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Long.Kernel.States.Magics
 {
-	public partial class MagicData
+    public partial class MagicData
 	{
 		private ushort useMagicType;
 
@@ -120,7 +117,7 @@ namespace Long.Kernel.States.Magics
 				}
 			}
 
-			//PENDIENTE FIX EVENTS
+			//TODO FIX EVENTS
 			var currentEvent = user?.GetCurrentEvent();
 			if (currentEvent != null && !currentEvent.IsAttackEnable(user, magic))
 			{
@@ -306,7 +303,7 @@ namespace Long.Kernel.States.Magics
 				return false;
 			}
 
-			(bool Success, ushort X, ushort Y) result = await CheckConditionAsync(magic, idTarget, x, y);
+            (bool Success, ushort X, ushort Y) result = await CheckConditionAsync(magic, idTarget, x, y);
 			if (!result.Success)
 			{
 				if (magic.Sort == MagicSort.Collide)
@@ -482,7 +479,7 @@ namespace Long.Kernel.States.Magics
 
 				switch (magic.Sort)
 				{
-					//pendiente ArrowHail
+					//TODO ArrowHail
 					case MagicSort.Attack:
 						result = await ProcessAttackAsync(magic);
 						break;
@@ -744,7 +741,7 @@ namespace Long.Kernel.States.Magics
 				user = RoleManager.GetUser(role.OwnerIdentity);
 			}
 
-			//PENDIENTE
+			//TODO
 			var currentEvent = user?.GetCurrentEvent();
 			var msg = new MsgMagicEffect
 			{
