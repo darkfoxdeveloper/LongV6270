@@ -3,7 +3,6 @@ using Long.Kernel.Managers;
 using Long.Kernel.Modules.Systems.Nobility;
 using Long.Kernel.Network.Game;
 using Long.Kernel.States.User;
-using Long.Module.Peerage.Managers;
 using Long.Network.Packets;
 
 namespace Long.Module.Peerage.Network

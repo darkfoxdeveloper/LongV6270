@@ -32,6 +32,9 @@ Download preconfigurated client from here:
 
 ## TODO
 - Reborn system (Incomplete)
+- Battle system (First touch attack maybe not are working good or are a problem if have difference in Dodge or similar)
+- Nobility have some issues, in new characters not showing icon
+- Some problems when user login and other player have it on screen, in some cases not loading ok
 - OfflineTG (Incomplete, not working)
 - Prestige System
 - Hero System (Not fully because need some more data in database but working for first 4 goals)
@@ -48,6 +51,7 @@ Download preconfigurated client from here:
 - Titles (Not from Wardrobe, that are fine)
 - Mesh not changing when using Skill for transform to Assasin
 - Rascagruta not have mobs and portals are wrong, not have npcs for the quests
+- Await mode in Player when are innactive
 - Lottery are removing SmallLotteryTicket if you exced tries (Low priority)
 - DiceKing in market not working (Low priority)
 
