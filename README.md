@@ -31,6 +31,7 @@ Download preconfigurated client from here:
 [__client__](https://mega.nz/file/xExUFQ5K#UzSTpyfbCazeQtxF8vpfv__E0kvAVLC-hq5_Isu6BXA)
 
 ## TODO
+- Reborn system (Incomplete)
 - OfflineTG (Incomplete, not working)
 - Prestige System
 - Hero System (Not fully because need some more data in database but working for first 4 goals)
@@ -45,10 +46,10 @@ Download preconfigurated client from here:
 - Arenas
 - House Furnitures (Incomplete, with missing actions i think are all ok)
 - Titles (Not from Wardrobe, that are fine)
-- Lottery (Are working good but need change animations for the correct box)
-- DiceKing in market not working
 - Mesh not changing when using Skill for transform to Assasin
 - Rascagruta not have mobs and portals are wrong, not have npcs for the quests
+- Lottery are removing SmallLotteryTicket if you exced tries (Low priority)
+- DiceKing in market not working (Low priority)
 
 
 ## Getting Started
