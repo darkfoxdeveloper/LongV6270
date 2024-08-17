@@ -24,3 +24,8 @@ UPDATE `game_cq`.`cq_monstertype` SET `lookface` = '131' WHERE (`id` = '7066');
 UPDATE `game_cq`.`cq_monstertype` SET `lookface` = '131' WHERE (`id` = '5308');
 UPDATE `game_cq`.`cq_monstertype` SET `lookface` = '131' WHERE (`id` = '3599');
 UPDATE `game_cq`.`cq_monstertype` SET `lookface` = '131' WHERE (`id` = '4886');
+
+UPDATE `game_cq`.`cq_action` SET `param` = '700 51 51 lottery' WHERE (`id` = '6036117');
+UPDATE `game_cq`.`cq_action` SET `param` = '700 57 57 lottery' WHERE (`id` = '6036217');
+UPDATE `game_cq`.`cq_action` SET `param` = '700 57 45 lottery' WHERE (`id` = '6036317');
+UPDATE `game_cq`.`cq_action` SET `param` = '700 45 57 lottery' WHERE (`id` = '6036517');
